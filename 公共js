@@ -1,0 +1,965 @@
+/**
+ * Name: 公共方法
+ * Date:
+ * Copyright: Copyright (c) 2018 www.etiantian.com
+ * @ author :
+ * @ vrsion : 2.00
+ */
+
+var _hmt = _hmt || [];
+
+(function (root, factory) {
+	if (typeof define === 'function' && define.amd) {
+		define(['jquery'], factory);
+	} else if (typeof exports === 'object') {
+		module.exports = factory(require('jquery'));
+	} else {
+		root.returnExports = factory(root.jQuery);
+	}
+}(this, function ($) {
+	//百度统计
+	var hm = document.createElement("script");
+	hm.src = "https://hm.baidu.com/hm.js?8b2d016c7a7351dc6cce42ca30b2632b";
+	var s = document.getElementsByTagName("title")[0];
+	s.parentNode.insertBefore(hm, s);
+
+	//桌面重写全局ajax error方法
+	if( navigator.userAgent.match(/axpzhkt/i) ){
+		resetAjax();
+	}
+
+    if (!Array.prototype.unique) {
+        Array.prototype.unique = function () {
+            this.sort(); //先排序
+            var res = [this[0]];
+            for (var i = 1; i < this.length; i++) {
+                if (this[i] !== res[res.length - 1]) {
+                    res.push(this[i]);
+                }
+            }
+            return res;
+        }
+    }
+    if (!Array.prototype.forEach) {
+        Array.prototype.forEach = function forEach(callback, thisArg) {
+            var T, k;
+            if (this == null) {
+                throw new TypeError("this is null or not defined");
+            }
+            var O = Object(this);
+            var len = O.length >>> 0;
+            if (typeof callback !== "function") {
+                throw new TypeError(callback + " is not a function");
+            }
+            if (arguments.length > 1) {
+                T = thisArg;
+            }
+            k = 0;
+            while (k < len) {
+                var kValue;
+                if (k in O) {
+                    kValue = O[k];
+                    callback.call(T, kValue, k, O);
+                }
+                k++;
+            }
+        };
+    }
+    if (!Array.prototype.indexOf) {
+        Array.prototype.indexOf = function (elt /*, from*/) {
+            var len = this.length >>> 0;
+
+            var from = Number(arguments[1]) || 0;
+            from = (from < 0)
+                ? Math.ceil(from)
+                : Math.floor(from);
+            if (from < 0)
+                from += len;
+
+            for (; from < len; from++) {
+                if (from in this && this[from] === elt)
+                    return from;
+            }
+            return -1;
+        };
+    }
+
+	$.extend({
+		/* 公共导航 */
+		getMenu: function (options) {
+			var Defaults = {
+				name: '',
+				isIndex: true,
+				url: '../index/stuindex.html',
+				type: '',
+				thepage: '',
+                toTop:true
+			};
+			 Defaults = $.extend(Defaults, options);
+			jQuery.support.cors = true;
+			//当前页面如果不需要置顶，$.getMenu()需配置toTop:false
+			if(Defaults.toTop == true){
+                layui.use(['element', 'util'], function () {
+                    var util = layui.util;
+                    util.fixbar({
+						showHeight: 20
+                        ,css: {
+                            right: 30,
+                            bottom: 30,
+                            content:''
+                        }
+                        ,bgcolor: '#393D49'
+                    });
+                    $('.layui-fixbar').children('.layui-fixbar-top').empty();
+                })
+            }
+			$.getLinkWebsParameter({
+				callbackfn: function () {
+
+					var _token = $.getToken();
+					//获取旧版跳转链接
+					var _s = window.sessionStorage.getItem("lw_sign");
+					var _t = window.sessionStorage.getItem("lw_time");
+					var _u = window.sessionStorage.getItem("lw_userId");
+					var _b = window.sessionStorage.getItem("lw_schoolIp");
+					var _linkWebMenu = _b + 'linkWeb?m=pageRedirect&sign=' + _s + '&time=' + _t + '&userId=' + _u + '&flagId=';
+					var help_url = "https://cdn1.school.etiantian.net/fpupload/helpdoc/school/student/student_help.zip";
+
+					var str = '<nav class="navbar navbar-static-top" role="navigation">';
+					str += '    <div class="logo">';
+					str += '       <a target="stuindex" href=' + Defaults.url + '><img src="" /></a>';
+					str += '    </div>';
+					str += '    <div class="notice"><a href="" target="stumessage" class="n-link"></a><span class="pub-time"></span></div>';
+
+					str += '    <div class="navbar-right">';
+					str += '        <div class="fl download dropdown dropdown-hover">';
+					str += '            <a class="dropdown-toggle dropdown-toggle-hover anav downLoadCode" style="display: none;" data-hover="dropdown" data-close-others="true">下载APP</a>';
+					str += '            <div role="menu" class="dropdown-menu dropdown-menu-rqcode">';
+					str += '                <div class="dropdown-menu-rqcode-box">';
+					str += '                    <div class="triangle"></div>';
+					str += '                    <div class="dropdown-menu-rqcode-main">';
+					str += '                        <div class="dropdown-menu-rqcode-imgb">';
+					str += '                            <p>爱学</p>';
+					str += '                            <img src="../images/qrcode_aixue.png" alt="">';
+					str += '                        </div>';
+					str += '                        <div class="dropdown-menu-rqcode-imgb">';
+					str += '                        <p>家长圈</p>';
+					str += '                            <img src="//cdn1.school.etiantian.net/ecampus/images/qrcode_jiazhangquan.png" alt="">';
+					str += '                        </div>';
+					str += '                    </div>';
+					str += '                </div>';
+					str += '             </div>';
+					str += '        </div>';
+					str += '        <div class="fl message-fl">';
+					str += '            <a href="../stumessage/index.html" target="stumessage" data-toggle="tooltip" data-placement="bottom" title="" data-original-title="消息中心"><i class="icon-messages"></i></a>'
+					str += '        </div>';
+					str += '        <div class="fl dropdown">';
+					str += '            <img src="" class="avatar dropdown-toggle" aria-expanded="false" data-toggle="dropdown" role="button" />';
+					str += '            <ul role="menu" class="dropdown-menu">';
+					str += '                <li><a href="../stuuser/index.html" target="stuuser" class="js-btn-indexsys">个人中心</a></li>';
+					str += '                <li><a href="' + help_url + '" target="_blank" class="js-btn-indexsys">使用手册</a></li>';
+					// str += '                <li><a href="' + _linkWebMenu + '15" class="js-btn-indexsys">回到旧版</a></li>';
+					var platform_data = $.judgePlatfrom();
+					if (platform_data == 1) {
+						str += '<li class="signout js-btn-signout"><i class="icon-signout">&nbsp;</i></li>';
+					}
+					str += '            </ul>';
+					str += '        </div>';
+					str += '    </div>';
+					str += '</nav>';
+
+
+
+					//添加logo
+					if( navigator.userAgent.match(/axpzhkt/i) ){
+						$('.wrapper.wrapper-content').css('padding', '20px 30px');
+						$('.fixed-nav').empty();
+						$('.footer').remove();
+					} else {
+						$(".fixed-nav").html(str);
+						$.getLogo();
+						$.getNavNotice();
+						$.getFooter({_b: _b, type: Defaults.type});
+					}
+
+					$(".js-btn-signout").off("click").on("click", function () {
+						$.ecSignOut()
+					});
+
+					$('.navbar-right .download').mouseover(function () {
+						$(this).addClass('open');
+					}).mouseout(function () {
+						$(this).removeClass('open');
+					});
+
+					//查看是否需要更改密码
+					$.getPasswordPopup();
+                }
+			});
+		},
+		getNavNotice: function () {
+			var _token = $.getToken();
+
+			$.ajax({
+				url: BASE_API_URL + '/api-service-general/notice/newest',
+				type: "GET",
+				dataType: "json",
+				data: {r: Math.random()},
+				beforeSend: function (request) {
+					request.setRequestHeader("Authorization", _token);
+				},
+				success: function (d) {
+					if (d.code == 1) {
+						if(d.data){
+							//console.log(d.data);
+							if( d.data.headImg ){
+								$(".navbar .avatar").attr("src", d.data.headImg);
+							} else {
+								$(".navbar .avatar").attr("src", DEFAULT_AVATAR);
+							}
+							if( d.data.studentNoticeInfoResultDTO && d.data.studentNoticeInfoResultDTO.noticeId ){
+								var noticeInfo = d.data.studentNoticeInfoResultDTO;
+								//1：校内通告 2：班级通知
+								var url = "../stumessage/index.html";
+								var noticeId = noticeInfo.noticeId;
+								if( noticeInfo.noticeType == 1){
+									url = "../stumessage/schoolparticulars.html";
+									sessionStorage.setItem('noticesId',noticeId);
+								} else if( noticeInfo.noticeType == 2 ){
+									url = "../stumessage/classparticulars.html";
+									sessionStorage.setItem('activityId',noticeId);
+								}
+
+								$(".navbar .notice a").attr("href", url);
+								$(".navbar .n-link").text(noticeInfo.noticeTitle);
+								$(".navbar .pub-time").text(noticeInfo.noticeTime);
+								$(".navbar .notice").show();
+							}
+						}
+					}
+				},
+				error: function (e) {
+					$.getErrorMsg(e, "获取通知及头像失败");
+				}
+			})
+		},
+		/* 公用footer */
+		getFooter: function (options) {
+			var Defaults = {
+				_b: "",
+				type: ""
+			};
+			var _token = $.getToken();
+			var Defaults = $.extend(Defaults, options);
+			var str00 = 'Copyright 2019 etiantian.ALL Rights Reserved.';
+			var str01 = '龙之门教育集团<span class="ml5 mr5">|</span>百度智慧课堂<span class="ml5 mr5">|</span><span class="ml5 mr5">' + str00 + '</span>'
+
+			var str02 = '<span class="ml5 mr5"><img src="../images/footer01.png"></span>京公网备案110102001311-2　　建议使用<a class="foot-a" href="https://cdn1.school.etiantian.net/wd72upload/uploadfile/cqmygysdssjtwmydtsgx/google.exe" target="_blank">谷歌浏览器</a>'
+			$.ajax({
+				url: BASE_API_URL + '/api-service-general/users/yg-info?',
+				type: 'GET',
+				data: {
+					r: Math.random()
+				},
+				dataType: 'JSON',
+				beforeSend: function (request) {
+					request.setRequestHeader('Authorization', _token);
+				},
+				success: function (res) {
+					if (res.code === 1) {
+						var str03 = ''
+						if(res.data.isHasLink === 1){
+							str03 = '<a class="to_report" target="_blank" href="" style="margin-right: 10px;">举报</a><a class="to_complaint" target="_blank" href="">评价</a>';
+							$('.downLoadCode').hide();
+						}else{
+							$('.downLoadCode').show();
+						}
+						var versionId = $.getRequest('vid');
+
+						var footstr = '<div class="footer-main clearfix">' +
+							'   <div class="footer-main-center">' +
+							'       <p>' + str01 + '</p>' +
+							'       <p>' + str02 + '</a></p>' +
+							'		<p>' + str03 + '</p>' +
+							'   </div>' +
+							'</div>';
+						$(".footer").html(footstr);
+						$('.to_report').attr('href','http://system.eduyun.cn/bmp-web/sysAppReport/appReport?appId=68mMzCzZjKDH9rWTWnoz20BRQNuaaLBk&userId='+res.data.userId);
+						$('.to_complaint').attr('href','http://system.eduyun.cn/bmp-web/getSpAppDetail_index?appId=68mMzCzZjKDH9rWTWnoz20BRQNuaaLBk&userId='+res.data.userId);
+					}
+				},
+				error: function (e) {
+					$.getErrorMsg(e, "获取央管信息");
+				}
+			});
+
+			//滑过LOGO动画
+			$('.footer-main-right dl').off().hover(function () {
+				var $this = $(this);
+				$this.find('.animate-box').show();
+			}, function () {
+				var $this = $(this);
+				$this.find('.animate-box').hide()
+			});
+		},
+		getRequest: function (name) {
+			var url = location.search;
+			var theRequest = new Object();
+			if (url.indexOf("?") != -1) {
+				var str = url.substr(1);
+				strs = str.split("&");
+				for (var i = 0; i < strs.length; i++) {
+					theRequest[strs[i].split("=")[0]] = strs[i].split("=")[1];
+				}
+			}
+			return theRequest[name];
+		},
+		getToken: function () {
+			if( navigator.userAgent.match(/axpzhkt/i) ){
+				var timestamp = new Date().getTime();
+				var lasttime = window.sessionStorage.getItem("lastTokenTime");
+				if( lasttime && ( ( timestamp - lasttime ) < 5*60*1000 ) ){
+					var ecampus_token = "Bearer " + window.sessionStorage.getItem("token");
+				} else {
+					var parameter_token = androidProxy.getToken();
+					var ecampus_token = "Bearer " + parameter_token;
+					window.sessionStorage.setItem("token", parameter_token);
+					window.sessionStorage.setItem("lastTokenTime", timestamp);
+				}
+			} else {
+				var parameter_token = $.getRequest('token');
+				if (parameter_token != "" && parameter_token != null && parameter_token != undefined) {
+					window.sessionStorage.setItem("token", parameter_token);
+					var ecampus_token = "Bearer " + parameter_token;
+					//删除链接里的token
+					$.deleteUrlToken(parameter_token);
+				} else {
+					var ecampus_token = "Bearer " + window.sessionStorage.getItem("token");
+				}
+			}
+			return ecampus_token;
+		},
+		deleteUrlToken:function(parameter_token){
+			var url_search = window.location.search;
+			var replace_str = "";
+			var newurl = window.location.href.split("?")[0];
+			if( url_search.indexOf("?token=") >= 0 ){
+				replace_str = "token="+parameter_token;
+				url_search = url_search.replace(replace_str,"");
+
+				if( url_search.length > 1 ){
+					url_search = url_search.substr(2);
+					newurl += "?" + url_search;
+				}
+			} else if( url_search.indexOf("&token=") >= 0 ){
+				replace_str = "&token=" + parameter_token;
+				url_search = url_search.replace(replace_str,"");
+				newurl += url_search;
+			}
+			history.replaceState(null,null,newurl);
+		},
+		getLinkWebsParameter: function (options) {
+			var Defaults = {
+				callbackfn: function () {
+				},
+			};
+			var Defaults = $.extend(Defaults, options);
+			var _token = $.getToken();
+			$.ajax({
+				url: BASE_API_URL + '/api-service-general/link-webs',
+				type: "GET",
+				dataType: "json",
+				data: {r: Math.random()},
+				beforeSend: function (request) {
+					request.setRequestHeader("Authorization", _token);
+				},
+				success: function (d) {
+					if (d.code == 1) {
+						if (d.data.sign != null && d.data.time != null && d.data.userId != null && d.data.schoolIp != null) {
+							window.sessionStorage.setItem("lw_sign", d.data.sign);
+							window.sessionStorage.setItem("lw_time", d.data.time);
+							window.sessionStorage.setItem("lw_userId", d.data.userId);
+							var _http = window.location.protocol || "http";
+							var schoolIp = d.data.schoolIp || "";
+							schoolIp = _http + schoolIp.substr(schoolIp.indexOf(":")+1);
+							window.sessionStorage.setItem("lw_schoolIp", schoolIp);
+							//设置localStorage兼容新窗口下退出
+							window.localStorage.setItem("lw_schoolIp", schoolIp);
+
+							Defaults.callbackfn();
+						} else {
+							layui.use(['layer'], function () {
+								var layer = layui.layer;
+								layer.msg("登录失败，请重新登录或刷新页面", {time: 3000});
+							})
+						}
+					}
+				},
+				error: function (e) {
+					$.getErrorMsg(e, "");
+				}
+			});
+		},
+		getErrorMsgCode: function (name) {
+			layui.use(['layer'], function () {
+				var layer = layui.layer;
+				layer.msg(name, {time: 3000});
+			})
+		},
+		getErrorMsg: function (e, name) {
+			layui.use(['layer'], function () {
+				var layer = layui.layer;
+				if (e.status == 401) {
+					if( navigator.userAgent.match(/axpzhkt/i) ){
+						//将上次获取token时间设置成过去10分钟
+						var lasttime = new Date().getTime() - 10*60*1000;
+						window.sessionStorage.setItem("lastTokenTime", lasttime);
+						alert(JSON.stringify({"type":402}));
+					} else {
+						layer.msg('您已退出，请重新登录！', {time: 3000}, function () {
+							var _b = window.localStorage.getItem("lw_schoolIp");
+							window.sessionStorage.removeItem("token");
+							if( !_b ){
+								_b = "http://web.etiantian.com/digitalschool/";
+							}
+							window.location.href = _b;
+						});
+					}
+				} else if (e.status == 404) {
+					if( name ){
+						layer.msg(name + '请求失败，请求未找到，404', {time: 3000});
+					}
+				} else if (e.status == 503 || e.status == 500) {
+					if( name ){
+						layer.msg(name + '请求失败，服务器内部错误', {time: 3000});
+					}
+				} else {
+					if( name ){
+						layer.msg(name + '请求失败,网络连接超时', {time: 3000});
+					}
+				}
+			})
+		},
+		//获取url中的参数
+		GetUrlParam: function (name) {
+			var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)"); //构造一个含有目标参数的正则表达式对象
+			var r = window.location.search.substr(1).match(reg);  //匹配目标参数
+			if (r != null) return unescape(r[2]);
+			return null; //返回参数值
+		},
+		//拿到logo
+		getLogo: function () {
+			var _token = $.getToken();
+			jQuery.support.cors = true;
+			$.ajax({
+				url: BASE_API_URL + '/api-service-general/logo/logo-src',
+				type: "GET",
+				dataType: "json",
+				beforeSend: function (request) {
+					request.setRequestHeader("Authorization", _token);
+				},
+				success: function (d) {
+					if (d.code == 1) {
+						//$('.navbar-brand img').attr('src', d.data);
+						$('.navbar .logo img').attr('src', d.data);
+					}
+				},
+				error: function (d) {
+					$.getErrorMsg(e, "LOGO加载");
+				}
+			});
+		},
+		/* 退出 */
+		ecSignOut: function () {
+			var _token = $.getToken();
+			var _b = window.sessionStorage.getItem("lw_schoolIp");
+			$.ajax({
+				url: _b + 'linkWeb?m=userquit',
+				type: "GET",
+				dataType: "jsonp",
+				jsonp: "callback",
+				data: {token: _token, r: Math.random()},
+				beforeSend: function (request) {
+					request.setRequestHeader("Authorization", _token);
+				},
+				success: function (d) {
+					if (d.code == 1) {
+						window.sessionStorage.removeItem("token");
+						window.location.href = d.data.url;
+					} else {
+						layui.use(['layer'], function () {
+							var layer = layui.layer;
+							layer.msg("退出失败", {time: 3000});
+						})
+					}
+				},
+				error: function (e) {
+					$.getErrorMsg(e, "退出");
+				}
+			});
+		},
+		/*时间戳转换为日期*/
+		timestampToTime: function (timestamp) {
+			//时间戳为10位需*1000，时间戳为13位的话不需乘1000
+			var date = new Date(timestamp),
+				Y = date.getFullYear() + '-',
+				M = (date.getMonth() + 1 < 10 ? '0' + (date.getMonth() + 1) : date.getMonth() + 1) + '-',
+				D = date.getDate() + ' ',
+				h = date.getHours() + ':',
+				m = date.getMinutes() + ':',
+				s = date.getSeconds();
+			return Y + M + D + '' + h + m + s;
+		},
+        /*是否是IE*/
+        isIE:function() {
+            if (!!window.ActiveXObject || "ActiveXObject" in window)
+                return true;
+            else
+                return false;
+        },
+        /*获取IE浏览器版本*/
+        getIEVersion:function() {
+            var userAgent = navigator.userAgent; //取得浏览器的userAgent字符串
+            var isIE = userAgent.indexOf("compatible") > -1 && userAgent.indexOf("MSIE") > -1; //判断是否IE<11浏览器
+            var isEdge = userAgent.indexOf("Edge") > -1 && !isIE; //判断是否IE的Edge浏览器
+            var isIE11 = userAgent.indexOf('Trident') > -1 && userAgent.indexOf("rv:11.0") > -1;
+            if(isIE) {
+                var reIE = new RegExp("MSIE (\\d+\\.\\d+);");
+                reIE.test(userAgent);
+                var fIEVersion = parseFloat(RegExp["$1"]);
+                if(fIEVersion == 7) {
+                    return 7;
+                } else if(fIEVersion == 8) {
+                    return 8;
+                } else if(fIEVersion == 9) {
+                    return 9;
+                } else if(fIEVersion == 10) {
+                    return 10;
+                } else {
+                    return 6;//IE版本<=7
+                }
+            } else if(isEdge) {
+                return 'edge';//edge
+            } else if(isIE11) {
+                return 11; //IE11
+            }else{
+                return -1;//不是ie浏览器
+            }
+        },
+        /**
+         * 公共的ajax
+         * @param config 设置 必须含有url和type token的修改放置在内
+         * @param params
+         * @param callbackfn
+         */
+        commonAjax: function (config, params, callbackfn) {
+            var _token ='';
+            if (config.token) {
+                _token = config.token;
+                delete config.token
+            }else{
+                _token = $.getToken()
+            }
+            var options = {
+                url: config.url,
+                type: config.type,
+                async: true,
+                dataType: "json",
+                beforeSend: function (request) {
+                    request.setRequestHeader("Authorization", _token);
+                },
+                data: params,
+                success:function (data) {
+                    if(data&&(data.code==1)){
+                        callbackfn.success(data)
+                    }else{
+                        $.getErrorMsgCode((data&&data.msg)||"网络异常，请稍后再试呦~")
+                    }
+                },
+                error: callbackfn.error
+            };
+            callbackfn.complete&&(options.complete=callbackfn.complete);
+
+            var _options = $.extend(options, config);
+            $.ajax(_options);
+        },
+		getPasswordPopup: function(){
+			var _token = $.getToken();
+			var platform_data = $.judgePlatfrom();
+			if (platform_data == 0) {
+				return;
+			}
+			$.ajax({
+				url: BASE_API_URL + '/api-service-general/users/verify-password',
+				type: "GET",
+				dataType: "json",
+				data: {
+					r: Math.random(),
+				},
+				beforeSend: function (request) {
+					request.setRequestHeader("Authorization", _token);
+				},
+				success: function (d) {
+					if (d.code == 1) {
+						if( d.data.flag == false || d.data.flag == "false" ){
+							var content = '';
+							content += '<div class="pwd-box-popup">';
+							content += '    <div class="passHelp">由于您的密码太过于简单，需要修改密码后再使用</div>';
+							content += '    <div class="passDiv">';
+							content += '        <label>用户名：</label>';
+							content += '        <input name="" type="text" value="' + d.data.userName + '" readonly="readonly" />';
+							content += '    </div>';
+							content += '    <div class="passTip"></div>';
+							content += '    <div class="passDiv">';
+							content += '        <label>新密码：</label>';
+							content += '        <input id="password" tab="1" name="" type="password" value="" data-level="0" placeholder="6-16个字符，大写字母/小写字母/数字/下划线至少包含三种" />';
+							content += '    </div>';
+							content += '    <ul class="pwd-level" id="pwd-level">';
+							content += '        <li class="low">弱</li>';
+							content += '        <li class="mid">中</li>';
+							content += '        <li class="strong">强</li>';
+							content += '    </ul>';
+							content += '    <div class="passTip" id="passwordTip"></div>';
+							content += '    <div class="passDiv">';
+							content += '        <label>再次输入：</label>';
+							content += '        <input id="repassword" name="" type="password" value="" placeholder="" />';
+							content += '    </div>';
+							content += '    <div class="passTip" id="repasswordTip"></div>';
+							content += '</div>';
+							layui.use(['layer'], function () {
+								var layer = layui.layer;
+								layer.open({
+									type: 1,
+									closeBtn: 0,
+									btnAlign: 'c',
+									move: false,
+									shade: [0.5, '#000000'],
+									shadeClose: false,
+									title: '提示',
+									skin: 'ecampus-class',
+									area: ['650px', '420px'],
+									content: content,
+									btn: ['确定'],
+									yes: function (index, layero) {
+										var pwd = $("#password").val();
+										var pwdlen = pwd.length;
+										var repwd = $("#repassword").val();
+
+										if( pwdlen < 6 || pwdlen > 16 ){
+											$("#passwordTip").html("密码长度为6-16个字符");
+											return;
+										}
+
+										var reg2 = /^(?=.*\d)(?=.*[A-Za-z])/;
+										if( !reg2.test(pwd) ) {
+											$("#passwordTip").html("密码必须包含数字和字母");
+											return;
+										}
+
+										var reg = /^\w{6,16}$/;
+										if( !reg.test(pwd) ) {
+											$("#passwordTip").html("密码只能包含字母、数字、下划线");
+											return;
+										}
+
+										if( $("#password").attr("data-level") < 2 ){
+											$("#passwordTip").html("密码强度太弱，大写字母/小写字母/数字/下划线至少包含三种");
+											return;
+										}
+
+										if( pwd != repwd ){
+											$("#repasswordTip").html("两次输入的不一致，请重新输入");
+											return;
+										}
+
+										$.ajax({
+											url: BASE_API_URL + '/api-service-general/users/ett-user/password/' + pwd,
+											type: "PUT",
+											dataType: "json",
+											data: {
+												r: Math.random(),
+											},
+											beforeSend: function (request) {
+												request.setRequestHeader("Authorization", _token);
+											},
+											success: function (result) {
+												if( result.code == 1 ){
+													layer.close(index);
+												} else {
+													$("#repasswordTip").html(result.msg);
+												}
+											},
+											error: function (e) {
+												$.getErrorMsg(e, "修改密码");
+											}
+										});
+
+									}
+								})
+							});
+						}
+					} else {
+						layui.use(['layer'], function () {
+							var layer = layui.layer;
+							layer.msg(d.msg, {time: 3000});
+						})
+					}
+				},
+				error: function (e) {
+					$.getErrorMsg(e, "密码强度验证");
+				}
+			});
+		},
+        closeAllLayer:function (fn) {
+            layui.use('layer', function () {
+                var layer = layui.layer;
+                layer.closeAll();
+                if(fn){
+                    setTimeout(function () {
+                        fn()
+                    },100)
+                }
+            });
+        },
+        /**
+		 * tokenDeteleAll
+		 * 去除url内的token保留其他参数
+         */
+        tokenDeteleAll:function () {
+            var _token=$.getRequest('token');
+            var _url= location.search;
+            var strs=[];
+            var newUrl=window.location.href.split("?")[0]+'?';
+            if (_url.indexOf("?") != -1) {
+                var str = _url.substr(1);
+                strs = str.split("&");
+                for (var i = 0; i < strs.length; i++) {
+                    if(strs[i].indexOf('token')<0){
+                        if(i<(strs.length-1)){
+                            newUrl+=strs[i]+'&';
+                        }else{
+                            newUrl+=strs[i];
+                        }
+                    }
+                }
+            }
+            if(_token){
+                window.sessionStorage.setItem("token", _token);
+            }
+            history.pushState(null,null,newUrl);
+        },
+		htmlspecialchars:function (str){
+			str = str.replace(/&/g, '&amp;');
+			str = str.replace(/</g, '&lt;');
+			str = str.replace(/>/g, '&gt;');
+			str = str.replace(/"/g, '&quot;');
+			str = str.replace(/'/g, '&#039;');
+			return str;
+		},
+		getPwdScore: function(pwd){
+			var score = 0;
+			if( !pwd ){
+				return score;
+			} else {
+				var size = pwd.length;
+				if (size < 7) {
+					score += 5;
+				} else if (size >= 7 && size <= 9) {
+					score += 10;
+				} else {
+					score += 20;
+				}
+				var numCount = 0, lowerCount = 0, upperCount = 0,specialCount = 0;
+				for ( var i = 0; i < size; i++ ){
+					var code = pwd.charCodeAt(i);
+					var mode = $.charMode(code);
+					switch(mode){
+						case 1:
+							numCount++;
+							break;
+						case 2:
+							upperCount++;
+							break;
+						case 3:
+							lowerCount++;
+							break;
+						case 4:
+							specialCount++;
+							break;
+						default:
+							break;
+					}
+				}
+				if (upperCount > 0 && lowerCount == 0) {
+					score += 10;
+				} else if (upperCount == 0 && lowerCount > 0) {
+					score += 10;
+				} else if (upperCount > 0 && lowerCount > 0) {
+					score += 25;
+				}
+				if (numCount > 2) {
+					score += 20;
+				} else if (numCount > 0 && numCount <= 2) {
+					score += 10;
+				}
+				if (specialCount == 1) {
+					score += 10;
+				} else if (specialCount > 1) {
+					score += 25;
+				}
+				if (upperCount > 0 && lowerCount > 0 && numCount > 0 && specialCount > 0) {
+					score += 5;
+				} else if ((upperCount > 0 || lowerCount > 0) && numCount > 0 && specialCount > 0) {
+					score += 3;
+				} else if ((upperCount > 0 || lowerCount > 0) && numCount > 0 && specialCount == 0) {
+					score += 2;
+				}
+
+				return score;
+			}
+		},
+		charMode: function(schar){
+			if (schar >= 48 && schar <= 57) {
+				//数字
+				return 1;
+			}
+			if (schar >= 65 && schar <= 90){
+				//大写
+				return 2;
+			}
+			if (schar >= 97 && schar <= 122){
+				//小写
+				return 3;
+			} else {
+				//特殊符号
+				return 4;
+			}
+		},
+		getPwdLevel: function(password){
+			var score = $.getPwdScore(password);
+			if( password ){
+				if( score > 45 && score <= 60 ) {
+					$("#pwd-level .low").attr("class","low active");
+					$("#pwd-level .mid").attr("class","mid active");
+					$("#pwd-level .strong").attr("class","strong");
+					$("#password").attr("data-level","2");
+				} else if (score > 60) {
+					$("#pwd-level .low").attr("class","low active");
+					$("#pwd-level .mid").attr("class","mid active");
+					$("#pwd-level .strong").attr("class","strong active");
+					$("#password").attr("data-level","3");
+				} else {
+					$("#pwd-level .low").attr("class","low active");
+					$("#pwd-level .mid").attr("class","mid");
+					$("#pwd-level .strong").attr("class","strong");
+					$("#password").attr("data-level","1");
+				}
+			} else{
+				$("#pwd-level li").removeClass("active");
+			}
+			$("#passwordTip").html("");
+			$("#repasswordTip").html("");
+		},
+		judgePlatfrom: function () {
+			var _token = $.getToken();
+			var value;
+			$.ajax({
+				url: BASE_API_URL + '/business-service-general/franchised-schools/third/if-show',
+				type: "GET",
+				dataType: "json",
+				async: false,
+				data: {r: Math.random()},
+				beforeSend: function (request) {
+					request.setRequestHeader("Authorization", _token);
+				},
+				success: function (d) {
+					if (d.code == 1) {
+						value = d.data.show;
+					}
+				},
+				error: function (e) {
+					$.getErrorMsg(e, "获取用户角色");
+				}
+			});
+			return value;
+		},
+		compressFile: function(file,callback) {
+			if (file.type.indexOf("image") == -1) {
+				callback(file);
+				return;
+			}
+			var fileObj = file;
+			//判断是否IE,edge浏览器
+			var isIE = navigator.userAgent.indexOf("Edge") > -1 || navigator.userAgent.indexOf("MSIE") > -1 || navigator.userAgent.indexOf("Trident/") > -1;
+			if (isIE) {
+				callback(file);
+			} else {
+				var reader = new FileReader()
+				reader.readAsDataURL(fileObj) //转base64
+				reader.onload = function(e) {
+				  var image = new Image() //新建一个img标签（还没嵌入DOM节点)
+				  image.src = e.target.result
+				  image.onload = function () {
+				    var canvas = document.createElement('canvas'), // 新建canvas
+				        context = canvas.getContext('2d'),
+				        imageWidth = image.width / 2,    //压缩后图片的大小
+				        imageHeight = image.height / 2,
+				        data = ''
+				    canvas.width = imageWidth
+				    canvas.height = imageHeight
+				    context.drawImage(image, 0, 0, imageWidth, imageHeight)
+				    data = canvas.toDataURL('image/jpeg') // 输出压缩后的base64
+				    var arr = data.split(','), mime = arr[0].match(/:(.*?);/)[1], // 转成blob
+				        bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
+				    while (n--) {
+				      u8arr[n] = bstr.charCodeAt(n);
+				    }
+				    var files = new window.File([new Blob([u8arr], {type: mime})], 'test.jpeg', {type: 'image/jpeg'}) // 转成file
+				    callback(files) // 回调
+				  }
+				}
+			}
+		}
+	});
+
+
+	//修改密码相关
+	$(document).on("change", "#password", function(){
+		$.getPwdLevel($(this).val());
+	});
+	$(document).on("keyup", "#password", function(){
+		$.getPwdLevel($(this).val());
+	});
+	$(document).on("keyup", "#repassword", function(){
+		$("#passwordTip").html("");
+		$("#repasswordTip").html("");
+	});
+
+	function resetAjax(){
+		var _ajax= $.ajax;
+
+		//重写jquery的ajax方法
+		$.ajax = function(opt){
+			var fn = {
+				error: function(XMLHttpRequest, textStatus, errorThrown){}
+			}
+			if(opt.error){
+				fn.error = opt.error;
+			}
+
+			//扩展增强处理
+			var _opt = $.extend(opt,{
+				error:function(XMLHttpRequest, textStatus, errorThrown){
+					fn.error(XMLHttpRequest, textStatus, errorThrown);
+					//没有调用公共方法的，加上调用公共方法
+					if( (fn.error+"").indexOf("getErrorMsg") < 0 ) {
+						$.getErrorMsg(XMLHttpRequest, "");
+					}
+				}
+			});
+			return _ajax(_opt);
+		};
+	}
+
+}));
+
