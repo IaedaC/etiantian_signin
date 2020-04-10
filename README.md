@@ -17,7 +17,7 @@
   
 **2.配置 Google Chrome & chromedriver**  
 下载并安装Chrome：https://www.google.cn/chrome/  
-chromedriver下载以及和Chrome版本对应参考：https://www.cnblogs.com/siconglove/p/10522748.html
+chromedriver下载以及和Chrome版本对应参考：https://www.cnblogs.com/siconglove/p/10522748.html  
 配置chromedriver环境变量参考：https://blog.csdn.net/weixin_43901998/article/details/88087832  
 （一定要配置chromedriver的环境变量）
 
