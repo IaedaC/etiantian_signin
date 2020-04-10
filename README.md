@@ -1,2 +1,2 @@
-# qhdyz-online-courses-auto-signin
-A simple Python program to automatically sign in Qinhuangdao No.1 Middle School's online courses in school.etiantian.com
+# 河北秦皇岛一中在线课程自动签到
+一个简单的Python小程序，用来实现在秦皇岛一中的网课平台school.etiantian.com进行签到
