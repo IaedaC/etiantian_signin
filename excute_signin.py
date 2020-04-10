@@ -28,24 +28,24 @@ with open('cookies.txt','r') as cookief:
     driver.refresh()
     # 刷新页面使cookies生效
     driver.maximize_window()
-	# 最大化页面
+    # 最大化页面
     driver.find_element(By.CSS_SELECTOR, ".accountLoginBtn").click()
     driver.close
-	# 点击登录按钮 & 关闭页面
+    # 点击登录按钮 & 关闭页面
     time.sleep(3)
-	# 延迟 3s 等待加载
+    # 延迟 3s 等待加载
     driver.get('https://school.etiantian.com/ecampus/stulist/index.html')
     # 打开学生作业
     time.sleep(1)
-	# 延迟 1s 等待加载
+    # 延迟 1s 等待加载
     ActionChains(driver).move_by_offset(x1, y1).click().perform()
-	# 选择学科
+    # 选择学科
     time.sleep(1)
-	# 延迟 1s 等待加载
+    # 延迟 1s 等待加载
     ActionChains(driver).move_by_offset(x2, y2).click().perform()
-	# 选择最后一场直播
+    # 选择最后一场直播
     time.sleep(3)
-	# 延迟 3s 等待直播间加载
+    # 延迟 3s 等待直播间加载
     driver.quit()
-	# 退出
+    # 退出
 
