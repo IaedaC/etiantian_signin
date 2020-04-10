@@ -1,0 +1,47 @@
+我是高二年纪的一名学生，关于宁的程序提点意见。
+首先 分析后端API
+http://school-cloud.etiantian.com/api-service-general/students/page-type-log
+这个地址用GET方法请求  初始化ajax
+$.ajax({
+                            url: BASE_API_URL + '/api-service-general/students/page-type-log',
+                            type: 'GET',
+                            data: {
+                                r: Math.random()
+                            },
+                            dataType: 'JSON',
+                            beforeSend: function (request) {
+                                request.setRequestHeader('Authorization', _token);
+                            },
+                            success: function (res) {
+                                if (res.code == 1) {
+                                    if(res.data && res.data.pageType >0){
+                                        if(res.data.pageType == 1){
+                                            $('.task-box').show();
+                                            //默认加载任务列表 未完成
+                                            $.getStudentsTaskList({
+                                                subjectId: Defaults.subjectId,//班级ID  _subjectId
+                                                // courseId:1,//课程ID  非必填参数
+                                                sortType: 1,//排序类型  1 创件时间正序，2 结束时间倒叙，3 老师列表的排序规则
+                                                endType: 2,//是否结束  1.已结束，2未结束，3全部
+                                                pageNum: 1,//分页大小
+                                                pageSize: 10,//当前页数
+                                                term:$('.slider-box .active').attr("data-ref"), //学期ID
+                                                first:1//初次加载调用参数 用于为空时  再次调用已完成任务
+                                            });
+                                        }else{
+                                            $.handlePageType2();
+                                        }
+                                    }
+                                }
+                            },
+                            error: function (e) {
+                                $.getErrorMsg(e, "");
+                            }
+                        });
+                        
+填入header _token  可以通过API得到或者直接创建本地代理抓取
+json里加入所需的参数   上边有列出
+而获取token的API我将会贴在另一个文件里
+你需要获取room id 和 userid 但是很不幸  根据我的判断  所有的userid都可以使用这个字符串代替 37C49374EEAEA75B
+
+之后就可以带签到了  而且我用curl测试了一下  没有访问频度的限制
