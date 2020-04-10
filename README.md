@@ -4,7 +4,7 @@
 ### 组成  
 **get_cookies.py** —— 获取网站自动登录cookies  
 **excute_signin.py** —— 带有图形界面的程序  
-**excute_signin_CLI.py** —— 以命令行运行的的程序  
+**excute_signin_CLI.py** —— 以命令行方式运行的程序  
 **cookies.txt** —— 用来储存cookies信息   
   
 ### 准备工作
