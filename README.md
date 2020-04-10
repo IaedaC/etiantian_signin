@@ -56,7 +56,7 @@ chromedriver下载以及和Chrome版本对应参考：https://www.cnblogs.com/si
   
 **举例：**  
 记录了“生物 (870, 175) (-250, 140)”，新建biology.bat，内容为  
-`"python ./excute_signin.py 170 875 -250 140"`  
+`"python ./excute_signin.py 870 175 -250 140"`  
 以此类推  
   
 **注意**  
