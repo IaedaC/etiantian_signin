@@ -1,0 +1,34 @@
+/**
+ * 正式
+ */
+var BASE_API_URL = '//school-cloud.etiantian.com';
+var BASE_API_URL_UPLOAD = '//school-sxfile.etiantian.com/tcfileupload';
+var BASE_IMG_SOURCE = '//school.etiantian.com/images/';
+
+var BASE_API_URL_DOWNLOAD = '//school.etiantian.com';
+//var BASE_API_URL_WEBUPLOAD = '//school.etiantian.com/fileSystem';
+var BASE_API_URL_WEBUPLOAD = '//school-file.etiantian.com/fileSystem';
+
+//学生素质评价栏目地址，每个前端项目对应的地址
+var SZPJ_URL = '//school.etiantian.com';
+
+//教研栏目地址，退出功能不能跨域，必须指定地址
+var JIAOYAN_URL = '//school.etiantian.com/jiaoyan';
+
+//新版基础平台地址
+var BASEFLAT_API_URL = '//school.etiantian.com/basicplatform/';
+
+//蜂巢学生做题  会推出视频
+var BASE_API_URL_VIDEO = "//item.etiantian.com/recommendation-service";
+
+//大数据接口保存kafka（间隔5秒请求一次）http://192.168.10.8:8090/pages/viewpage.action?pageId=211910697
+var DATE_SAVE_QUEUE_API="//school-cloud.etiantian.com/action-service-general/saveQueue2.do";
+
+// 头像上传地址
+var BASE_UPLOAD_URL = "//i.im.etiantian.com";
+
+//登录页面地址
+var LOGIN_URL = "http://school.etiantian.com/elogin/#/";
+
+//默认头像地址
+var DEFAULT_AVATAR = "//cdn1.school.etiantian.net/ecampus/images/defaulthead.png";
