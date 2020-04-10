@@ -11,7 +11,7 @@
 **1.安装 Python3**  
 参考：https://www.runoob.com/python3/python3-install.html  
   
-**2.配置Google Chrome & chromedriver**  
+**2.配置 Google Chrome & chromedriver**  
 下载并安装Chrome：https://www.google.cn/chrome/  
 配置chromedriver参考：https://blog.csdn.net/weixin_43901998/article/details/88087832  
 （一定要配置chromedriver的环境变量）
@@ -65,3 +65,6 @@ e.g.
   
 **注意**  
 bat文件要以英文数字命名，否则计划任务很可能无法执行  
+  
+**效果**  
+//to-do
