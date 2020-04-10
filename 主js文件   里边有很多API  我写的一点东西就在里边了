@@ -1,0 +1,1919 @@
+/**
+ * 学生改版
+ */
+(function (root, factory) {
+    if (typeof define === 'function' && define.amd) {
+        define(['jquery'], factory);
+    } else if (typeof exports === 'object') {
+        module.exports = factory(require('jquery'));
+    } else {
+        root.returnExports = factory(root.jQuery);
+    }
+
+}(this, function ($) {
+    var _token = $.getToken();
+	if(window.sessionStorage.getItem("total")){
+		window.sessionStorage.removeItem("total")
+	}
+
+	window.onload = function(){
+		window.setTimeout(function(){
+			document.body.scrollTop = document.documentElement.scrollTop = 0;
+		},5);
+		//解决pc端按照名称跳转问题
+		if( !window.name){
+			window.name = "stulist";
+		}
+	};
+    //滚动加载
+    var _idx = 0;
+    $.extend({
+        inits: function (reload) {
+            jQuery.support.cors = true;
+            reload&&location.reload();
+	        $.getMenu({name: '首页-学生版'});
+            $.getTerminfoList();
+        },
+        //获取用户学期信息  326
+        getTerminfoList: function () {
+            $.ajax({
+                url: BASE_API_URL + '/api-service-general/users/term-info',
+                type: 'GET',
+                data: {
+                    r: Math.random()
+                },
+                dataType: 'JSON',
+                beforeSend: function (request) {
+                    request.setRequestHeader('Authorization', _token);
+                },
+                success: function (res) {
+                    if (res.code == 1) {
+                        if (res.data && res.data.length > 0) {
+                            layui.use(['form', 'element'], function () {
+                                var form = layui.form;
+                                var _Data = res.data;
+                                var _selectStr, _termId = "";
+                                for (var i = 0; i < _Data.length; i++) {
+                                    if (_Data[i].currentTerm) {
+                                        _termId = _Data[i].ref;
+                                        _selectStr += '<option value="' + _Data[i].ref + '" selected>' + _Data[i].year + ' ' + _Data[i].termName + '</option>'
+                                    } else {
+                                        _selectStr += '<option value="' + _Data[i].ref + '">' + _Data[i].year + ' ' + _Data[i].termName + '</option>'
+                                    }
+                                }
+                                $('.first-select').html(_selectStr);
+                                //激活组件
+                                form.render('select');
+
+                                //获取学科信息
+                                $.getSubjectList({
+                                    termId: _termId
+                                });
+                                //选择下拉参数
+                                form.on('select(YearsSelects)', function (data) {
+	                                window.sessionStorage.removeItem("total")
+	                                $('.done-list').empty();
+                                    $('.isBegining').show();
+                                    $('.having-tasklist').empty();
+                                    $('.class-list-box').empty();
+                                    $('.time-line-list').empty();
+                                    // $('#paging3 .over').empty();
+                                    // $('#paging3').hide();
+                                    $('#paging2 .over').empty();
+                                    $('.task-box').show();
+                                    $('.classes-box').hide();
+
+                                    //获取学科信息
+                                    $.getSubjectList({
+                                        termId: data.value
+                                    });
+                                });
+
+                            });
+                        }
+                    } else {
+                        $.LayuiMessage({message: d.msg});
+                    }
+                },
+                error: function (e) {
+                    $('.zzjzz').addClass("zzjzzsb");
+					$.getErrorMsg(e, "获取用户学期信息");
+                }
+            });
+        },
+        //学生端 班级下学科列表查询接口  324
+        getSubjectList: function (options) {
+            var Defaults = {
+	            termId:''
+            };
+            Defaults = $.extend(Defaults, options);
+            $.ajax({
+                url: BASE_API_URL + '/api-service-general/subjects/term/'+ Defaults.termId ,
+                type: 'GET',
+                data: {
+                    r: Math.random()
+                },
+                dataType: 'JSON',
+                beforeSend: function (request) {
+                    request.setRequestHeader('Authorization', _token);
+                },
+                success: function (res) {
+                    if (res.code == 1) {
+                        if (res.data && res.data.length > 0) {
+                            $('.all-hidden').show();
+                            $('.nothings-box').hide();
+                            layui.use(['element'], function () {
+                                var element = layui.element;
+                                var _Data = res.data;
+                                var _subjectsListStr= "";
+	                            var _subjectId = "";
+                                for (var i = 0; i < _Data.length; i++) {
+                                    if (i == 0) {
+                                        if (_Data[i].noFinNum != 0) {
+                                            _subjectsListStr = '<li data-ref="'+Defaults.termId+'" data-subjectId="' + _Data[i].subjectId + '" class="item">' + _Data[i].subjectName + '<span class="point-red"></span></li>'
+                                        } else {
+                                            _subjectsListStr = '<li data-ref="'+Defaults.termId+'" data-subjectId="' + _Data[i].subjectId + '" class="item">' + _Data[i].subjectName + '</li value="'+_Data[i].subjectId+'">'
+                                        }
+                                    } else {
+                                        if (_Data[i].noFinNum != 0) {
+                                            _subjectsListStr += '<li data-ref="'+Defaults.termId+'" class="item" data-subjectId="' + _Data[i].subjectId + '">' + _Data[i].subjectName + '<span class="point-red"></span></li>'
+                                        } else {
+                                            _subjectsListStr += '<li data-ref="'+Defaults.termId+'" class="item" data-subjectId="' + _Data[i].subjectId + '">' + _Data[i].subjectName + '</li>'
+                                        }
+                                    }
+                                }
+                                $('.item-box').html(_subjectsListStr);
+                                if (sessionStorage.getItem('subjectId')) {
+                                    _subjectId = sessionStorage.getItem('subjectId');
+                                    //$('.slider-box .item[data-subjectid="' + sessionStorage.getItem('subjectId') + '"]').addClass('active');
+                                    var selectedSubjectDom = $('.slider-box .item[data-subjectid="' + sessionStorage.getItem('subjectId') + '"]');
+                                    if(selectedSubjectDom.length > 0){
+                                        selectedSubjectDom.addClass('active');
+                                    } else {
+                                        //如果没找到对应的科目，就重新指定第一个
+                                        _subjectId = $('.slider-box .item').eq(0).attr('data-subjectid')
+                                        $(".slider-box .item").eq(0).addClass('active');
+                                    }
+                                } else {
+                                    _subjectId = $('.slider-box .item').eq(0).attr('data-subjectid')
+                                    $('.slider-box .item').eq(0).addClass('active');
+                                }
+                                /*if(_Data.length < 9){
+                                    $('.nothing').addClass("pt90");
+                                }*/
+                                Slider({
+                                    event: '.subjects-list',
+                                    onClick: function ($this, option) {
+	                                    $('.class-index2').hide();
+	                                    $('.loading2').show();
+                                        CommonFun($(option.event).find('.active').attr('data-subjectid'),Defaults.termId)
+                                    },
+                                    prevClick: function (option) {
+	                                    $('.class-index2').hide();
+	                                    $('.loading2').show();
+                                        CommonFun( $(option.event).find('.active').attr('data-subjectid'),Defaults.termId)
+                                    },
+                                    nextClick: function (option) {
+	                                    $('.class-index2').hide();
+	                                    $('.loading2').show();
+                                        CommonFun( $(option.event).find('.active').attr('data-subjectid'),Defaults.termId)
+                                    }
+                                });
+
+                                function CommonFun(subjectId) {
+	                                window.sessionStorage.removeItem("total");
+                                    $('.having-tasklist').empty();
+                                    $('.done-list').empty();
+                                    $('.class-list-box').empty();
+                                    $('.time-line-list').empty();
+                                    // $('#paging3 .over').empty();
+                                    // $('#paging3').hide();
+                                    $('#paging2 .over').empty();
+                                    $('#paging2 .load').empty();
+                                    $('#paging4 .over').empty();
+                                    $('.task-box').show();
+                                    $('.classes-box').hide();
+                                    sessionStorage.setItem('subjectId',subjectId);
+                                    sessionStorage.removeItem('courseId');
+	                                //展示列表顺序
+	                                $.getPageTypeLog({
+		                                subjectId:subjectId,
+		                                term:Defaults.termId
+	                                })
+                                }
+	                            $('.having-tasklist').empty();
+	                            $('.done-list').empty();
+	                            $('.class-list-box').empty();
+	                            $('.time-line-list').empty();
+	                            // $('#paging3 .over').empty();
+                                // $('#paging3').hide();
+	                            $('#paging2 .over').empty();
+	                            $('#paging4 .over').empty();
+                                $('.layui-tab-bar').remove();
+								//展示列表顺序
+	                            $.getPageTypeLog({
+		                            subjectId:_subjectId,
+		                            term:Defaults.termId
+	                            })
+
+
+                            });
+                        }else{
+                            //若不存在数据则 加载 无  占位图 隐藏之前容器
+                            $('.nothings-box').show();
+                            $('.all-hidden').hide();
+                        }
+                    }
+                },
+                error: function (e) {
+					$.getErrorMsg(e, "获取学科");
+                }
+            });
+        },
+	    //查询学生选择查看列表记录  346
+	    getPageTypeLog: function (options) {
+		    var Defaults = {
+			    subjectId: '',
+			    termId:''
+		    };
+            Defaults = $.extend(Defaults, options);
+            //获取是否显示按任务和按课程  2020-2-17
+            $.ajax({
+                url: BASE_API_URL + '/business-service-general/student-view-task-switch?r=' + Math.random(),
+                type: 'GET',
+                dataType: 'json',
+                beforeSend: function (request) {
+                    request.setRequestHeader("Authorization", _token);
+                },
+                success: function (res) {
+                    if (res.code == 1 && res.data == 1) {
+                        //正常显示按任务和按课程
+                        $.ajax({
+                            url: BASE_API_URL + '/api-service-general/students/page-type-log',
+                            type: 'GET',
+                            data: {
+                                r: Math.random()
+                            },
+                            dataType: 'JSON',
+                            beforeSend: function (request) {
+                                request.setRequestHeader('Authorization', _token);
+                            },
+                            success: function (res) {
+                                if (res.code == 1) {
+                                    if(res.data && res.data.pageType >0){
+                                        if(res.data.pageType == 1){
+                                            $('.task-box').show();
+                                            //默认加载任务列表 未完成
+                                            $.getStudentsTaskList({
+                                                subjectId: Defaults.subjectId,//班级ID  _subjectId
+                                                // courseId:1,//课程ID  非必填参数
+                                                sortType: 1,//排序类型  1 创件时间正序，2 结束时间倒叙，3 老师列表的排序规则
+                                                endType: 2,//是否结束  1.已结束，2未结束，3全部
+                                                pageNum: 1,//分页大小
+                                                pageSize: 10,//当前页数
+                                                term:$('.slider-box .active').attr("data-ref"), //学期ID
+                                                first:1//初次加载调用参数 用于为空时  再次调用已完成任务
+                                            });
+                                        }else{
+                                            $.handlePageType2();
+                                        }
+                                    }
+                                }
+                            },
+                            error: function (e) {
+                                $.getErrorMsg(e, "");
+                            }
+                        });
+                    } else {
+                        //只显示按课程
+                        $(".switch").hide();
+                        setTimeout(function(){
+                            $.handlePageType2();
+                        },10);
+                    }
+                }
+            });		    
+        },
+        //按课程显示
+        handlePageType2: function(){
+            //默认加载学生端 课程列表 和 未完成任务小红点接口
+            $('.classes-box').show();
+            $('.class-list-box').empty();
+            $('.time-line-list').empty();
+            $('.title-classes').empty();
+            $('.task-box').hide();
+            $.getStuCoursesList({
+                subjectId: parseInt($('.slider-box .active').attr("data-subjectid")),//学科ID _subjectId
+                pageNum: 1,//分页大小
+                pageSize: 20,//当前页数
+            });
+            //$(this).parents('.task-box').hide().siblings('.classes-box').show();
+        },
+	    getPageTypeLogSave: function (options) {
+		    var Defaults = {
+			    pageType: ""//1代表任务列表 2 代表课程列表
+		    };
+		    Defaults = $.extend(Defaults, options);
+		    $.ajax({
+			    url: BASE_API_URL + '/api-service-general/students/page-type-log',
+			    type: 'POST',
+			    data: {
+				    pageType:Defaults.pageType,
+				    r: Math.random()
+			    },
+			    dataType: 'JSON',
+			    beforeSend: function (request) {
+				    request.setRequestHeader('Authorization', _token);
+			    },
+			    success: function (res) {
+				    if (res.code == 1) {
+
+				    }
+			    },
+			    error: function (e) {
+					$.getErrorMsg(e, "");
+			    }
+		    });
+	    },
+	    //查询学生选择查看列表记录  346
+	    getPageTypeLogSave: function (options) {
+		    var Defaults = {
+			    pageType: ""//1代表任务列表 2 代表课程列表
+		    };
+		    Defaults = $.extend(Defaults, options);
+		    $.ajax({
+			    url: BASE_API_URL + '/api-service-general/students/page-type-log',
+			    type: 'POST',
+			    data: {
+				    pageType:Defaults.pageType,
+				    r: Math.random()
+			    },
+			    dataType: 'JSON',
+			    beforeSend: function (request) {
+				    request.setRequestHeader('Authorization', _token);
+			    },
+			    success: function (res) {
+				    if (res.code == 1) {
+
+				    }
+			    },
+			    error: function (e) {
+					$.getErrorMsg(e, "");
+			    }
+		    });
+	    },
+        //学生端 任务列表  329
+        getStudentsTaskList: function (options) {
+            var Defaults = {
+                subjectId: "",//班级ID
+                courseId: "",//课程ID
+                sortType: "",//排序类型  1 创件时间正序，2 结束时间倒叙，3 老师列表的排序规则
+                endType: "",//是否结束  1.已结束，2未结束，3全部
+                pageNum: "",//分页大小
+                pageSize: "",//当前页数
+                more: "",
+                moreDone: "",//加载更多
+                belong: "",
+                isClick:"",
+	            term:"",
+	            first:""
+            };
+            Defaults = $.extend(Defaults, options);
+            $.ajax({
+                url: BASE_API_URL + '/api-service-course/tasks/subjects/' + Defaults.subjectId,
+                type: 'GET',
+                async:true,
+                data: {
+	                sortType: Defaults.sortType,
+	                endType: Defaults.endType,
+	                pageSize: Defaults.pageSize,
+	                courseId: Defaults.courseId,
+	                term:Defaults.term,
+	                pageNum: Defaults.pageNum,
+	                r: Math.random()
+                },
+                dataType: 'JSON',
+                beforeSend: function (request) {
+                    request.setRequestHeader('Authorization', _token);
+                    if(Defaults.pageNum == 1 && Defaults.sortType == 1){
+                        $('.content-classes').append('<div class="nodata"><img src="../images/loadding.gif"/></div>');
+                        $('.content-list').prepend('<div class="nodata"><img src="../images/loadding.gif"/></div>');
+                    }else{
+                        if(Defaults.sortType == 1){
+                            $('.paging3.loading_domp').show();
+                        }else if(Defaults.sortType == 2){
+                            $('.paging4.loading_domp').show();
+                        }
+                    }
+                    if(Defaults.sortType == 1){
+                        $('#paging3 .over').html('')
+                    }else if(Defaults.sortType == 2){
+                        $('#paging4 .over').html('')
+                    }
+                },
+                success: function (res) {
+                    if (res.code == 1) {
+                        $('.content-classes .nodata').remove();
+                        $('.paging3.loading_domp').hide();
+                        $('.content-list .nodata').remove();
+                        $('.paging4.loading_domp').hide();
+                        $('.isBegining').hide();
+	                    //$(window).off("scroll");
+	                    //获取跳转地址
+	                    var lwschoolIp = window.sessionStorage.getItem("lw_schoolIp");
+                        if (res.data && res.data.taskList && res.data.taskList.length > 0) {
+                            if (Defaults.more == "") {
+                                var _Data = res.data.taskList;
+                                $('.aaa').hide();
+                                if(Defaults.isClick == ""){
+	                                $('.hiveingdone').html(res.data.total);
+                                }
+                                var _oAllListStr = "";
+                                var options = "";
+                                for (var i = 0; i < _Data.length; i++) {
+	                                var _taskDes = "";
+	                                var _liStr = "";
+                                    var classStyle = "";
+                                    var _individuationStr = "";
+                                    //surplusTimeType剩余时间类型  1 分钟 2 小时 3 天
+	                                var _taskClassStr = "";
+                                    var _surplusTime = "";
+	                                var _taskStatus = "";
+	                                var _taskStatusStyle = "";
+	                                var _taskType = "";//剩余时间数值  任务状态  任务分类
+                                    //taskStatus 任务状态  1 已完成 2 未完成
+                                    if (_Data[i].taskType == 13 && _Data[i].answersheet ) {
+                                        if (_Data[i].answersheet.paperStatus == 1) {
+                                            if(Defaults.sortType == 2){
+                                                _taskStatus = '未完成'
+                                                _taskStatusStyle = 'state-w'
+                                            }else{
+                                                _taskStatus = ''
+                                                _taskStatusStyle = ''
+                                            }
+                                        } else if (_Data[i].answersheet.paperStatus == 2) {
+                                            _taskStatus = '待批改'
+                                            _taskStatusStyle = 'state-d'
+                                        } else if (_Data[i].answersheet.paperStatus == 3) {
+                                            _taskStatus = '待改错'
+                                            _taskStatusStyle = 'state-d'
+                                        } else if (_Data[i].answersheet.paperStatus == 5) {
+                                            _taskStatus = '已改错'
+                                            _taskStatusStyle = 'state-y'
+                                        } else if (_Data[i].answersheet.paperStatus == 6) {
+                                            _taskStatus = '已批改'
+                                            _taskStatusStyle = 'state-y'
+                                        }
+                                    } else {
+                                        if (_Data[i].taskStatus == 1) {
+                                            _taskStatus = '已完成'
+                                            _taskStatusStyle = 'state-y'
+                                        } else if (_Data[i].taskStatus == 2) {
+                                            if(Defaults.sortType == 2){
+                                                _taskStatus = '未完成'
+                                                _taskStatusStyle = 'state-w'
+                                            }else{
+                                                _taskStatus = ''
+                                                _taskStatusStyle = ''
+                                            }
+                                        }
+                                    }
+
+
+	                                if (_Data[i].surplusTimeType == 1) {
+		                                _surplusTime = '<span style="color: #FF8A00;">剩余' + _Data[i].surplusTime + '分钟' + '</span>';
+	                                } else if (_Data[i].surplusTimeType == 2) {
+		                                _surplusTime = '<span style="color: #FF8A00;">剩余' + _Data[i].surplusTime + '小时</span>';
+	                                }else if(_Data[i].surplusTimeType == 3){
+		                                _surplusTime = '<span style="color: #666666;">剩余' + _Data[i].surplusTime + '天</span>';
+	                                }
+
+	                                if(_Data[i].over){
+		                                _surplusTime = '<span style="color: #999999;">已结束</span>'
+	                                }
+
+                                    if (_Data[i].taskClass == 1) {
+                                        _taskClassStr = '<span class="lx">预习</span>'
+                                    } else if (_Data[i].taskClass == 2) {
+                                        _taskClassStr = '<span class="lx">作业</span>'
+                                    } else if(_Data[i].taskClass == 3) {
+                                        _taskClassStr = '<span class="lx">课堂</span>'
+                                    }
+
+
+                                    //任务类型
+                                    if (_Data[i].taskType == 1) {
+                                        _taskType = '学资源';
+                                        classStyle = 'xzy'
+                                    } else if (_Data[i].taskType == 2) {
+                                        _taskType = '讨论';
+                                        classStyle = 'hdjl'
+                                    } else if (_Data[i].taskType == 3) {
+                                        _taskType = '做题任务';
+                                        classStyle = 'khzy'
+                                    } else if (_Data[i].taskType == 4) {
+                                        _taskType = '测验';
+                                        classStyle = 'csrw'
+                                    } else if (_Data[i].taskType == 5) {
+                                        _taskType = '自测';
+	                                    if(_Data[i].taskStatus == 2 && _Data[i].over){
+		                                    _liStr = '<li class="ellipsis in-block"><a class="zc-click"><span class="fw600">[' + _taskType + ']&nbsp;</span>' + _Data[i].taskName + ' ' + _taskClassStr + '</a></li>';
+	                                    }else{
+		                                    _liStr = '<li class="ellipsis in-block"><a target="csrw" href="'+lwschoolIp+'task?m=next&taskId='+_Data[i].taskId+'&token='+window.sessionStorage.getItem("token")+'"><span class="fw600">[' + _taskType + ']&nbsp;</span>' + _Data[i].taskName + ' ' + _taskClassStr + '</a></li>';
+	                                    }
+                                        classStyle = 'csrw'
+                                    } else if (_Data[i].taskType == 6) {
+                                        _taskType = '微课程';
+                                        classStyle = 'wkc'
+                                    } else if (_Data[i].taskType == 7) {
+                                        _taskType = '一般任务';
+                                        classStyle = 'ybrw'
+                                    } else if (_Data[i].taskType == 8) {
+                                        _taskType = '一般任务';
+                                        classStyle = 'ybrw'
+                                    } else if (_Data[i].taskType == 9) {
+                                        _taskType = '一般任务';
+                                        classStyle = 'ybrw'
+                                    } else if (_Data[i].taskType == 10) {
+                                        _taskType = '直播课';
+                                        if(_Data[i].liveClass && _Data[i].liveClass.liveOver){
+	                                        if(_Data[i].liveClass.showPlayback){
+		                                        _liStr = '<li class="ellipsis in-block"><a class="liveOver-btn"><span class="fw600">[' + _taskType + ']&nbsp;</span>' + _Data[i].taskName + ' ' + _taskClassStr + '</a><span title="直播课回放" data-taskName="'+_Data[i].taskName+'" data-courseId="'+_Data[i].taskId+'" class="zbk-click"></span></li>';
+	                                        }else{
+		                                        _liStr = '<li class="ellipsis in-block"><a class="liveOver-btn"><span class="fw600">[' + _taskType + ']&nbsp;</span>' + _Data[i].taskName + ' ' + _taskClassStr + '</a></li>';
+	                                        }
+                                        }else{
+	                                        if(_Data[i].liveClass.showPlayback){
+		                                        _liStr = '<li class="ellipsis in-block"><a target="zbk" href="'+lwschoolIp+'task?m=next&taskId='+_Data[i].taskId+'&token='+window.sessionStorage.getItem("token")+'"><span class="fw600">[' + _taskType + ']&nbsp;</span>' + _Data[i].taskName + ' ' + _taskClassStr + '</a><span title="直播课回放" data-taskName="'+_Data[i].taskName+'" data-courseId="'+_Data[i].taskId+'" class="zbk-click"></span></li>';
+	                                        }else{
+		                                        _liStr = '<li class="ellipsis in-block"><a target="zbk" href="'+lwschoolIp+'task?m=next&taskId='+_Data[i].taskId+'&token='+window.sessionStorage.getItem("token")+'"><span class="fw600">[' + _taskType + ']&nbsp;</span>' + _Data[i].taskName + ' ' + _taskClassStr + '</a></li>';
+	                                        }
+                                        }
+                                        classStyle = 'zbk'
+                                    } else if (_Data[i].taskType == 13) {
+                                        _taskType = '答题卡';
+                                        classStyle = 'dtk';
+                                        var _timeStr = '';
+                                        var _taskLink = '';
+                                        var _taskDesStr = '';
+                                        var publishAnswerStr = '';
+                                        //结束后显示迟交和起止日期
+                                        if(_Data[i].answersheet){
+                                            if(_Data[i].over){
+
+                                                    var _cj = "";
+                                                    if(_Data[i].answersheet.late){
+                                                        _cj = "迟交";
+                                                    }
+                                                    //开始结束时间
+                                                    _timeStr = '<li>起/止：'+_Data[i].answersheet.beginTime+'/'+_Data[i].answersheet.endTime+'&nbsp;&nbsp;<span class="cj-color">'+_cj+'</span></li>';
+
+                                            } else {
+                                                if( _surplusTime ){
+                                                    _timeStr = '<li> ' + _surplusTime + '</li>';
+                                                }
+                                            }
+                                            _taskDes = (_Data[i].taskDes && _Data[i].taskDes.length >0) ? (_Data[i].taskDes).replace(/<br>/g, "") : "" ;
+                                            //任务描述
+                                            if(_taskDes){
+                                                _taskDesStr =  '<li class="ellipsis">' + _taskDes + '</li>';
+                                            }
+                                            if(_Data[i].answersheet.fullScore == true){
+                                                _taskClassStr += '<span class="fullmark"></span>';
+                                            }
+                                            //任务链接
+                                            var taskName = $.htmlspecialchars(_Data[i].taskName);
+                                            if (_Data[i].answersheet.paperStatus == 1) {
+                                                var _taskUrl = '../task/studentsanswers.html?asId=' + _Data[i].answersheet.paperId + '&statusId=' + _Data[i].answersheet.paperStatus + '&pic=1&fromPage=stulist&token=' + window.sessionStorage.getItem("token");
+                                                _taskLink = '<li class="ellipsis in-block"><a href="javascript:void(0);" data-taskId="' + _Data[i].taskId + '" data-url="' + _taskUrl + '" class="test-done-link"><span class="fw600">[' + _taskType + ']&nbsp;</span>' + taskName + ' ' + _taskClassStr + '</a></li>';
+                                            } else if (_Data[i].answersheet.paperStatus == 2) {
+                                                _taskLink = '<li class="ellipsis in-block"><a href="../task/corrections.html?asId=' + _Data[i].answersheet.paperId + '&statusId=' + _Data[i].answersheet.paperStatus + '&teacherIs=' + 0 + '&showPublishFlag=' + _Data[i].answersheet.showPublishFlag + '&pic=1&fromPage=stulist"><span class="fw600">[' + _taskType + ']&nbsp;</span>' + taskName + ' ' + _taskClassStr + '</a></li>';
+                                            } else if (_Data[i].answersheet.paperStatus == 3) {
+                                                _taskLink = '<li class="ellipsis in-block"><a href="../task/repair.html?asId=' + _Data[i].answersheet.paperId + '&statusId=' + 1 + '&pic=1&fromPage=stulist"><span class="fw600">[' + _taskType + ']&nbsp;</span>' + taskName + ' ' + _taskClassStr + '</a></li>';
+                                            } else if (_Data[i].answersheet.paperStatus == 5) {
+                                                _taskLink = '<li class="ellipsis in-block"><a href="../task/corrections.html?asId=' + _Data[i].answersheet.paperId + '&statusId=' + _Data[i].answersheet.paperStatus + '&teacherIs=' + 0 + '&showPublishFlag=' + _Data[i].answersheet.showPublishFlag + '&pic=1&fromPage=stulist"><span class="fw600">[' + _taskType + ']&nbsp;</span>' + taskName + ' ' + _taskClassStr + '</a></li>';
+                                            } else if (_Data[i].answersheet.paperStatus == 6) {
+                                                _taskLink = '<li class="ellipsis in-block"><a href="../task/corrections.html?asId=' + _Data[i].answersheet.paperId + '&statusId=' + _Data[i].answersheet.paperStatus + '&teacherIs=' + 0 + '&showPublishFlag=' + _Data[i].answersheet.showPublishFlag + '&pic=1&fromPage=stulist"><span class="fw600">[' + _taskType + ']&nbsp;</span>' + taskName + ' ' + _taskClassStr + '</a></li>';
+                                            }
+                                            if( _Data[i].answersheet.showPublishFlag ){
+                                                publishAnswerStr = '<li><span style="color: #999999;">已公布答案</span></li>';
+                                            }
+                                        }
+                                        _individuationStr = _taskLink + _taskDesStr + _timeStr + publishAnswerStr;
+
+                                    } else if (_Data[i].taskType == 14) {
+                                        _taskType = '个性化任务';
+	                                    if(_Data[i].over){
+		                                    var _cj = "";
+		                                    if(_Data[i].individuation){
+			                                    if(_Data[i].individuation.late){
+				                                    _cj = "迟交";
+			                                    }
+			                                    var _taskDesStr = "";
+			                                    _taskDes = (_Data[i].taskDes).length >0 ? (_Data[i].taskDes).replace(/<br>/g, "") : "" ;
+			                                    if(_taskDes){
+				                                    _taskDesStr =  '<li class="ellipsis">' + _taskDes + '</li>';
+			                                    }
+			                                    _individuationStr = '<li class="ellipsis in-block"><a href="'+lwschoolIp+'task?m=next&fromPage=stulist&taskId='+_Data[i].taskId+'&token='+window.sessionStorage.getItem("token")+'"><span class="fw600">[' + _taskType + ']&nbsp;</span>' + _Data[i].taskName + ' ' + _taskClassStr + '</a></li>'   +
+				                                    _taskDesStr +
+				                                    '<li>起/止：'+_Data[i].individuation.beginTime+'/'+_Data[i].individuation.endTime+'&nbsp;&nbsp;<span class="cj-color">'+_cj+'</span></li>';
+		                                    }
+	                                    }
+                                        classStyle = 'znrw'
+                                    } else if (_Data[i].taskType == 15) {
+                                    	var _singsoundAuthStr = "";
+                                        _taskType = '智能听说';
+                                        if(_Data[i].over){
+	                                        var _cj = "";
+	                                        if(_Data[i].singsound){
+		                                        if(_Data[i].singsound.late){
+			                                        _cj = "迟交";
+		                                        }
+                                                //是否有先生权限 true 有，false 没有
+                                                if(_Data[i].singsound.singsoundAuth){
+                                                    _singsoundAuthStr = '<a target="xs" href="'+lwschoolIp+'task?m=next&taskId='+_Data[i].taskId+'&token='+window.sessionStorage.getItem("token")+'"><span class="fw600">[' + _taskType + ']&nbsp;</span>' + _Data[i].taskName + ' ' + _taskClassStr + '</a>'
+                                                }else{
+                                                    _singsoundAuthStr = '<a class="singsoundAuthFalse"><span class="fw600">[' + _taskType + ']&nbsp;</span>' + _Data[i].taskName + ' ' + _taskClassStr + '</a>'
+                                                }
+		                                        var _taskDesStr = "";
+		                                        _taskDes = (_Data[i].taskDes).length >0 ? (_Data[i].taskDes).replace(/<br>/g, "") : "" ;
+		                                        if(_taskDes){
+			                                        _taskDesStr = '<li class="ellipsis">' + _taskDes + '</li>';
+		                                        }
+		                                        _individuationStr = '<li class="ellipsis in-block">'+_singsoundAuthStr+'</li>'   +
+			                                        _taskDesStr +
+			                                        '<li>起/止：'+_Data[i].singsound.beginTime+'/'+_Data[i].singsound.endTime+'&nbsp;&nbsp;<span class="cj-color">'+_cj+'</span></li>';
+	                                        }
+                                        }else{
+	                                        if(_Data[i].singsound){
+                                                //是否有先生权限 true 有，false 没有
+                                                if(_Data[i].singsound.singsoundAuth){
+                                                    _liStr = '<li class="ellipsis in-block"><a target="xs" href="'+lwschoolIp+'task?m=next&taskId='+_Data[i].taskId+'&token='+window.sessionStorage.getItem("token")+'"><span class="fw600">[' + _taskType + ']&nbsp;</span>' + _Data[i].taskName + ' ' + _taskClassStr + '</a></li>'
+                                                }else{
+                                                    _liStr = '<li class="ellipsis in-block"><a class="singsoundAuthFalse"><span class="fw600">[' + _taskType + ']&nbsp;</span>' + _Data[i].taskName + ' ' + _taskClassStr + '</a></li>'
+                                                }
+	                                        }
+                                        }
+
+                                        classStyle = 'xs'
+                                    }
+
+									//在当前页面打开，1学资源，2讨论，3做题，4测验，6微课程，789一般任务,14个性化任务，需要额外传参
+									var _selfArr = [1,2,3,4,6,7,8,9];
+									if(_liStr == ""){
+										if( _Data[i].taskType == 14 ){
+											_liStr = '<li class="ellipsis in-block"><a href="'+lwschoolIp+'task?m=next&fromPage=stulist&taskId='+_Data[i].taskId+'&token='+window.sessionStorage.getItem("token")+'"><span class="fw600">[' + _taskType + ']&nbsp;</span>' + _Data[i].taskName + ' ' + _taskClassStr + '</a></li>';
+										} else if(_Data[i].taskStatus == 2 && (_Data[i].taskType == 1 || _Data[i].taskType == 4)) {
+                                            var testUrl = lwschoolIp+'task?m=next&taskId='+_Data[i].taskId+'&token='+window.sessionStorage.getItem("token");
+                                            _liStr = '<li class="ellipsis in-block"><a href="javascript:void(0);" data-taskId="' + _Data[i].taskId + '" data-url="' + testUrl + '" class="test-done-link"><span class="fw600">[' + _taskType + ']&nbsp;</span>' + _Data[i].taskName + ' ' + _taskClassStr + '</a></li>';
+                                        } else {
+											if( _selfArr.indexOf(_Data[i].taskType) >= 0){
+												_liStr = '<li class="ellipsis in-block"><a href="'+lwschoolIp+'task?m=next&taskId='+_Data[i].taskId+'&token='+window.sessionStorage.getItem("token")+'"><span class="fw600">[' + _taskType + ']&nbsp;</span>' + _Data[i].taskName + ' ' + _taskClassStr + '</a></li>';
+											} else {
+												_liStr = '<li class="ellipsis in-block"><a target="' + (classStyle || "_blank") + '" href="'+lwschoolIp+'task?m=next&taskId='+_Data[i].taskId+'&token='+window.sessionStorage.getItem("token")+'"><span class="fw600">[' + _taskType + ']&nbsp;</span>' + _Data[i].taskName + ' ' + _taskClassStr + '</a></li>';
+											}
+										}
+
+									}
+
+                                    if(_individuationStr == ""){
+	                                    _taskDes = (_Data[i].taskDes).length >0 ? (_Data[i].taskDes).replace(/<br>/g, "") : "" ;
+                                    	if(_taskDes){
+		                                    _individuationStr = _liStr   +
+			                                    '<li class="ellipsis">' +_taskDes + '</li>' +
+			                                    '<li> ' + _surplusTime + '</li>';
+	                                    }else{
+		                                    _individuationStr = _liStr   +
+			                                    '<li> ' + _surplusTime + '</li>';
+	                                    }
+
+                                    }
+                                    var hoverStr = "";
+                                    var stateStr = "";
+	                                  var lastNumStr = "";
+                                    if( _taskDes ){
+                                        if(_Data[i].taskType == 13 && _Data[i].answersheet && _Data[i].answersheet.showPublishFlag){
+                                            hoverStr = '<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 every-list hover-list" style="height: 138px;">'
+                                            stateStr = '<span class="state '+_taskStatusStyle+'">' + _taskStatus + '</span>'
+                                        } else {
+                                            hoverStr = '<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 every-list hover-list">'
+                                            stateStr = '<span class="state '+_taskStatusStyle+'">' + _taskStatus + '</span>'
+                                        }
+                                    } else {
+                                        if(_Data[i].taskType == 13 && _Data[i].answersheet && _Data[i].answersheet.showPublishFlag){
+                                            hoverStr = '<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 every-list hover-list">'
+                                            stateStr = '<span class="state '+_taskStatusStyle+'">' + _taskStatus + '</span>'
+                                        } else {
+                                            hoverStr = '<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 every-list hover-list" style="height: 84px;">'
+                                            stateStr = '<span style="margin-top: 30px;" class="state '+_taskStatusStyle+'">' + _taskStatus + '</span>'
+                                            lastNumStr = 'margin-top:34px;'
+                                        }
+                                    }
+                                    var lastNumStr = '';
+                                    var showReportArr = [3,5,6];
+                                    if(_Data[i].taskType == 13 && _Data[i].answersheet && showReportArr.indexOf(_Data[i].answersheet.paperStatus) >= 0 ){
+                                        lastNumStr += '<div class="pull-right task-report" style="'+lastNumStr+'"><a href="../report/sindex.html?tid=' + _Data[i].taskId + '&fromPage=stulist&uid=">查看报告</a></div>';
+                                    }
+                                    if(_Data[i].taskType == 13 && _Data[i].answersheet){
+                                        if (_Data[i].answersheet.scoreRank == 1) {
+                                            lastNumStr += '       <img src="images/pm1.png" class="pmimg"/>';
+                                        } else if (_Data[i].answersheet.scoreRank == 2) {
+                                            lastNumStr += '       <img src="images/pm2.png" class="pmimg"/>';
+                                        } else if (_Data[i].answersheet.scoreRank == 3) {
+                                            lastNumStr += '       <img src="images/pm3.png" class="pmimg"/>';
+                                        }
+                                    }
+
+                                    _oAllListStr += hoverStr+
+                                        '<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8 js-detail-link detail-link">' +
+                                        '<div class="list-logo-card '+classStyle+'"></div>' +
+                                        '<ul class="mf16" data-taskId=' + _Data[i].taskId + ' data-taskStatus=' + _Data[i].taskStatus + '>' +
+	                                    _individuationStr +
+                                        '</ul>' +
+                                        '</div>' +
+                                        '<div class="col-lg-2 col-md-2 col-sm-2 col-xs-2 js-detail-link detail-link">'+stateStr+'</div>' +
+                                        '<div class="col-lg-2 col-md-2 col-sm-2 col-xs-2">' +
+                                        lastNumStr +
+                                        '</div>' +
+                                        '</div>';
+                                };
+
+                                if (Defaults.belong) {
+                                    $('.done-list').append(_oAllListStr);
+	                                $('.btn-click').attr("data-idx",false).find('span').html("隐藏已完成作业")
+                                } else {
+                                    $('.having-tasklist').append(_oAllListStr);
+                                }
+                                //未完成列表下拉加载
+                                if (Defaults.belong) {
+                                    window.sessionStorage.setItem("total", res.data.total);
+                                    var _total = res.data.total;
+                                    if(Defaults.isClick == "1"){
+	                                    options = {
+		                                    event: '#paging4',
+		                                    //box: '.every-list-box',//默认为windows
+		                                    pageSize: res.data.pageSize || 10,
+		                                    pageNum: res.data.pageNum || 1,
+		                                    total: _total,
+		                                    sortType: Defaults.sortType,
+		                                    itemLength: $('.done-list .every-list').length,
+		                                    belong: true
+	                                    };
+                                    }else{
+	                                    options = {
+		                                    event: '#paging4',
+		                                    //box: '.every-list-box',//默认为windows
+		                                    pageSize: res.data.pageSize || 10,
+		                                    pageNum: res.data.pageNum || 1,
+		                                    sortType: Defaults.sortType,
+		                                    total: _total,
+		                                    itemLength: $('.every-list-box .every-list').length,
+		                                    belong: true
+	                                    };
+                                    }
+
+                                } else {
+                                    options = {
+                                        event: '#paging3',
+                                        //box: '',//默认为windows
+                                        pageSize: res.data.pageSize || 10,
+                                        pageNum: res.data.pageNum || 1,
+	                                    sortType: Defaults.sortType,
+                                        total: res.data.total,
+                                        itemLength: $('.every-list-box .every-list').length,
+                                        belong: true
+                                    };
+                                }
+
+                                ScrollPager(options, function (option) {
+                                    if (Defaults.moreDone == "") {
+                                        $.getStudentsTaskList({
+                                            subjectId: Defaults.subjectId,//班级ID  _subjectId
+                                            sortType: 1,//排序类型  1 创件时间正序，2 结束时间倒叙，3 老师列表的排序规则
+                                            endType: 2,//是否结束  1.已结束，2未结束，3全部
+                                            pageNum: option.pageNum,//分页大小
+	                                        term:$('.slider-box .active').attr("data-ref"), //学期ID
+                                            pageSize: 10,//当前页数
+                                            moreDone: "",
+	                                        isClick:1
+                                        });
+                                    } else {
+                                        if (option.pageSize * (option.pageNum - 1) < res.data.total && $(".btn-click").attr("data-idx") == "false") {
+                                            $.getStudentsTaskList({
+                                                subjectId: Defaults.subjectId,//学科ID  _subjectId
+                                                sortType: 2,//排序类型  1 创件时间正序，2 结束时间倒叙，3 老师列表的排序规则
+                                                endType: 1,//是否结束  1.已结束，2未结束，3全部
+                                                pageNum: option.pageNum,//分页大小
+                                                pageSize: option.pageSize,//当前页数
+	                                            term:$('.slider-box .active').attr("data-ref"), //学期ID
+                                                moreDone: 1,
+                                                belong: true,
+	                                            isClick:1
+                                            });
+                                        }else{
+	                                        $.getStudentsTaskList({
+		                                        subjectId: Defaults.subjectId,//班级ID  _subjectId
+		                                        sortType: 2,//排序类型  1 创件时间正序，2 结束时间倒叙，3 老师列表的排序规则
+		                                        endType: 1,//是否结束  1.已结束，2未结束，3全部
+		                                        pageNum: option.pageNum,//分页大小
+		                                        pageSize: option.pageSize,//当前页数
+		                                        term:$('.slider-box .active').attr("data-ref"), //学期ID
+		                                        moreDone: 1,
+		                                        belong: true,
+		                                        isClick:1
+	                                        });
+                                        }
+                                    }
+
+                                });
+                            } else if (Defaults.more == 2) {
+                            	//$(".classes-box").css({"background":"#e4ebf5"})
+                                $('.nothings-div').removeClass("zzjzz");
+                                var _liStr = "";
+                                if($('.is-done-classes').css('display') == 'block'){
+                                    $('.class-list-box').empty();
+                                }
+                                var _Data = res.data.taskList;
+                                var _oAllListStrDone = "";
+                                for (var i = 0; i < _Data.length; i++) {
+	                                var _singsoundAuthStr = "";
+                                	var _liStr = "";
+	                                var _taskDes = "";
+                                    //surplusTimeType剩余时间类型  1 分钟 2 小时 3 天
+                                    var _surplusTimeType = _Data[i].surplusTimeType;
+                                    var _taskClassStr = "";
+                                    var _surplusTime = "";
+	                                var _taskStatus = "";
+	                                var _individuationStr = "";
+	                                var _taskStatusStyle = "";
+	                                var _taskType = "";//剩余时间数值  任务状态  任务分类
+                                    //taskStatus 任务状态  1 已完成 2 未完成
+                                    if (_Data[i].taskType == 13 && _Data[i].answersheet) {
+                                        if (_Data[i].answersheet.paperStatus == 1) {
+                                            _taskStatus = '未完成'
+                                            _taskStatusStyle = 'state-w'
+                                        } else if (_Data[i].answersheet.paperStatus == 2) {
+                                            _taskStatus = '待批改'
+                                            _taskStatusStyle = 'state-d'
+                                        } else if (_Data[i].answersheet.paperStatus == 3) {
+                                            _taskStatus = '待改错'
+                                            _taskStatusStyle = 'state-d'
+                                        } else if (_Data[i].answersheet.paperStatus == 5) {
+                                            _taskStatus = '已改错'
+                                            _taskStatusStyle = 'state-y'
+                                        } else if (_Data[i].answersheet.paperStatus == 6) {
+                                            _taskStatus = '已批改'
+                                            _taskStatusStyle = 'state-y'
+                                        }
+                                    } else {
+                                        if (_Data[i].taskStatus == 1) {
+                                            _taskStatus = '已完成'
+                                            _taskStatusStyle = 'state-y'
+                                        } else if (_Data[i].taskStatus == 2) {
+                                            _taskStatus = '未完成'
+                                            _taskStatusStyle = 'state-w'
+                                        }
+                                    }
+	                                if (_surplusTimeType == 1) {
+		                                _surplusTime = '<span style="color: #FF8A00;">剩余' + _Data[i].surplusTime + '分钟' + '</span>';
+	                                } else if (_surplusTimeType == 2) {
+		                                _surplusTime = '<span style="color: #FF8A00;">剩余' + _Data[i].surplusTime + '小时</span>';
+	                                }else if(_surplusTimeType == 3){
+		                                _surplusTime = '<span style="color: #666666;">剩余' + _Data[i].surplusTime + '天</span>';
+	                                }
+
+
+                                    if (_Data[i].taskClass == 1) {
+                                        _taskClassStr = '<span class="lx">预习</span>'
+                                    } else if (_Data[i].taskClass == 2) {
+                                        _taskClassStr = '<span class="lx">作业</span>'
+                                    } else if(_Data[i].taskClass == 3){
+                                        _taskClassStr = '<span class="lx">课堂</span>'
+                                    }
+
+	                                if(_Data[i].over){
+		                                _surplusTime = '<span style="color: #999999;">已结束</span>'
+	                                }
+
+
+                                    //任务类型
+                                    if (_Data[i].taskType == 1) {
+                                        _taskType = '学资源';
+                                        classStyle = 'xzy'
+                                    } else if (_Data[i].taskType == 2) {
+                                        _taskType = '讨论';
+                                        classStyle = 'hdjl'
+                                    } else if (_Data[i].taskType == 3) {
+                                        _taskType = '做题任务';
+                                        classStyle = 'khzy'
+                                    } else if (_Data[i].taskType == 4) {
+                                        _taskType = '测验';
+                                        classStyle = 'csrw'
+                                    } else if (_Data[i].taskType == 5) {
+                                        _taskType = '自测';
+                                        if(_Data[i].taskStatus == 2 && _Data[i].over){
+	                                        _liStr = '<li class="ellipsis in-block"><a class="zc-click"><span class="fw600">[' + _taskType + ']&nbsp;</span>' + _Data[i].taskName + ' ' + _taskClassStr + '</a></li>';
+                                        }else{
+	                                        _liStr = '<li class="ellipsis in-block"><a target="csrw" href="'+lwschoolIp+'task?m=next&taskId='+_Data[i].taskId+'&token='+window.sessionStorage.getItem("token")+'"><span class="fw600">[' + _taskType + ']&nbsp;</span>' + _Data[i].taskName + ' ' + _taskClassStr + '</a></li>';
+                                        }
+                                        classStyle = 'csrw'
+                                    } else if (_Data[i].taskType == 6) {
+                                        _taskType = '微课程';
+                                        classStyle = 'wkc'
+                                    } else if (_Data[i].taskType == 7) {
+                                        _taskType = '一般任务';
+                                        classStyle = 'ybrw'
+                                    } else if (_Data[i].taskType == 8) {
+                                        _taskType = '一般任务';
+                                        classStyle = 'ybrw'
+                                    } else if (_Data[i].taskType == 9) {
+                                        _taskType = '一般任务';
+                                        classStyle = 'ybrw'
+                                    } else if (_Data[i].taskType == 10) {
+                                        _taskType = '直播课';
+                                        if(_Data[i].liveClass && _Data[i].liveClass.liveOver){
+	                                        if(_Data[i].liveClass.showPlayback){
+												_liStr = '<li class="ellipsis in-block overflowscroll"><a class="liveOver-btn"><span class="fw600">[' + _taskType + ']&nbsp;</span>' + _Data[i].taskName + ' ' + _taskClassStr + '</a><span title="直播课回放" data-taskName="'+_Data[i].taskName+'" data-courseId="'+_Data[i].taskId+'" class="zbk-click"></span></li>';
+	                                        }else{
+		                                        _liStr = '<li class="ellipsis in-block"><a class="liveOver-btn"><span class="fw600">[' + _taskType + ']&nbsp;</span>' + _Data[i].taskName + ' ' + _taskClassStr + '</a></li>';
+	                                        }
+                                        }else{
+	                                        if(_Data[i].liveClass.showPlayback){
+		                                        _liStr = '<li class="ellipsis in-block"><a target="zbk" href="'+lwschoolIp+'task?m=next&taskId='+_Data[i].taskId+'&token='+window.sessionStorage.getItem("token")+'"><span class="fw600">[' + _taskType + ']&nbsp;</span>' + _Data[i].taskName + ' ' + _taskClassStr + '</a><span title="直播课回放" data-taskName="'+_Data[i].taskName+'" data-courseId="'+_Data[i].taskId+'" class="zbk-click"></span></li>';
+	                                        }else{
+		                                        _liStr = '<li class="ellipsis in-block"><a target="zbk" href="'+lwschoolIp+'task?m=next&taskId='+_Data[i].taskId+'&token='+window.sessionStorage.getItem("token")+'"><span class="fw600">[' + _taskType + ']&nbsp;</span>' + _Data[i].taskName + ' ' + _taskClassStr + '</a></li>';
+	                                        }
+                                        }
+                                        classStyle = 'zbk'
+                                    } else if (_Data[i].taskType == 13) {
+                                        _taskType = '答题卡';
+                                        classStyle = 'dtk';
+                                        var _timeStr = '';
+                                        var _taskLink = '';
+                                        var _taskDesStr = '';
+                                        var publishAnswerStr = '';
+                                        //结束后显示迟交和起止日期
+                                        if(_Data[i].answersheet){
+                                            if(_Data[i].over){
+
+                                                var _cj = "";
+                                                if(_Data[i].answersheet.late){
+                                                    _cj = "迟交";
+                                                }
+                                                //开始结束时间
+                                                _timeStr = '<li>起/止：'+_Data[i].answersheet.beginTime+'/'+_Data[i].answersheet.endTime+'&nbsp;&nbsp;<span class="cj-color">'+_cj+'</span></li>';
+
+                                            } else {
+                                                if( _surplusTime ){
+                                                    _timeStr = '<li> ' + _surplusTime + '</li>';
+                                                }
+                                            }
+                                            _taskDes = (_Data[i].taskDes && _Data[i].taskDes.length >0) ? (_Data[i].taskDes).replace(/<br>/g, "") : "" ;
+                                            //任务描述
+                                            if(_taskDes){
+                                                _taskDesStr =  '<li class="ellipsis">' + _taskDes + '</li>';
+                                            }
+                                            if(_Data[i].answersheet.fullScore == true){
+                                                _taskClassStr += '<span class="fullmark"></span>';
+                                            }
+                                            //任务链接
+                                            var taskName = $.htmlspecialchars(_Data[i].taskName);
+                                            if (_Data[i].answersheet.paperStatus == 1) {
+                                                //_taskLink = '<li class="ellipsis in-block"><a href="../task/studentsanswers.html?asId=' + _Data[i].answersheet.paperId + '&statusId=' + _Data[i].answersheet.paperStatus + '&pic=1&fromPage=stulist"><span class="fw600">[' + _taskType + ']&nbsp;</span>' + taskName + ' ' + _taskClassStr + '</a></li>';
+                                                var _taskUrl = '../task/studentsanswers.html?asId=' + _Data[i].answersheet.paperId + '&statusId=' + _Data[i].answersheet.paperStatus + '&pic=1&fromPage=stulist&token=' + window.sessionStorage.getItem("token");
+                                                _taskLink = '<li class="ellipsis in-block"><a href="javascript:void(0);" data-taskId="' + _Data[i].taskId + '" data-url="' + _taskUrl + '" class="test-done-link"><span class="fw600">[' + _taskType + ']&nbsp;</span>' + taskName + ' ' + _taskClassStr + '</a></li>';
+                                            } else if (_Data[i].answersheet.paperStatus == 2) {
+                                                _taskLink = '<li class="ellipsis in-block"><a href="../task/corrections.html?asId=' + _Data[i].answersheet.paperId + '&statusId=' + _Data[i].answersheet.paperStatus + '&teacherIs=' + 0 + '&showPublishFlag=' + _Data[i].answersheet.showPublishFlag + '&pic=1&fromPage=stulist"><span class="fw600">[' + _taskType + ']&nbsp;</span>' + taskName + ' ' + _taskClassStr + '</a></li>';
+                                            } else if (_Data[i].answersheet.paperStatus == 3) {
+                                                _taskLink = '<li class="ellipsis in-block"><a href="../task/repair.html?asId=' + _Data[i].answersheet.paperId + '&statusId=' + 1 + '&pic=1&fromPage=stulist"><span class="fw600">[' + _taskType + ']&nbsp;</span>' + taskName + ' ' + _taskClassStr + '</a></li>';
+                                            } else if (_Data[i].answersheet.paperStatus == 5) {
+                                                _taskLink = '<li class="ellipsis in-block"><a href="../task/corrections.html?asId=' + _Data[i].answersheet.paperId + '&statusId=' + _Data[i].answersheet.paperStatus + '&teacherIs=' + 0 + '&showPublishFlag=' + _Data[i].answersheet.showPublishFlag + '&pic=1&fromPage=stulist"><span class="fw600">[' + _taskType + ']&nbsp;</span>' + taskName + ' ' + _taskClassStr + '</a></li>';
+                                            } else if (_Data[i].answersheet.paperStatus == 6) {
+                                                _taskLink = '<li class="ellipsis in-block"><a href="../task/corrections.html?asId=' + _Data[i].answersheet.paperId + '&statusId=' + _Data[i].answersheet.paperStatus + '&teacherIs=' + 0 + '&showPublishFlag=' + _Data[i].answersheet.showPublishFlag + '&pic=1&fromPage=stulist"><span class="fw600">[' + _taskType + ']&nbsp;</span>' + taskName + ' ' + _taskClassStr + '</a></li>';
+                                            }
+                                            if( _Data[i].answersheet.showPublishFlag ){
+                                                publishAnswerStr = '<li><span style="color: #999999;">已公布答案</span></li>';
+                                            }
+                                        }
+                                        _individuationStr = _taskLink + _taskDesStr + _timeStr + publishAnswerStr;
+                                    } else if (_Data[i].taskType == 14) {
+	                                    _taskType = '个性化任务';
+	                                    if(_Data[i].over){
+		                                    var _cj = "";
+		                                    if(_Data[i].individuation){
+			                                    if(_Data[i].individuation.late){
+				                                    _cj = "迟交";
+			                                    }
+			                                    _taskDes = (_Data[i].taskDes).length >0 ? (_Data[i].taskDes).replace(/<br>/g, "") : "" ;
+			                                    var _taskDesStr = "";
+			                                    if(_taskDes){
+				                                    _taskDesStr = '<li class="ellipsis">' + _taskDes + '</li>';
+			                                    }
+			                                    _individuationStr = '<li class="ellipsis in-block"><a href="'+lwschoolIp+'task?m=next&fromPage=stulist&taskId='+_Data[i].taskId+'&token='+window.sessionStorage.getItem("token")+'"><span class="fw600">[' + _taskType + ']&nbsp;</span>' + _Data[i].taskName + ' ' + _taskClassStr + '</a></li>'   +
+				                                    _taskDesStr +
+				                                    '<li>起/止：'+_Data[i].individuation.beginTime+'/'+_Data[i].individuation.endTime+'&nbsp;&nbsp;<span class="cj-color">'+_cj+'</span></li>';
+		                                    }
+	                                    }
+	                                    classStyle = 'znrw'
+                                    } else if (_Data[i].taskType == 15) {
+	                                    _taskType = '智能听说';
+	                                    if(_Data[i].over){
+		                                    var _cj = "";
+		                                    if(_Data[i].singsound){
+			                                    if(_Data[i].singsound.late){
+				                                    _cj = "迟交";
+			                                    }
+                                                //是否有先生权限 true 有，false 没有
+                                                if(_Data[i].singsound.singsoundAuth){
+                                                    _singsoundAuthStr = '<a target="xs" href="'+lwschoolIp+'task?m=next&taskId='+_Data[i].taskId+'&token='+window.sessionStorage.getItem("token")+'"><span class="fw600">[' + _taskType + ']&nbsp;</span>' + _Data[i].taskName + ' ' + _taskClassStr + '</a>'
+                                                }else{
+                                                    _singsoundAuthStr = '<a class="singsoundAuthFalse"><span class="fw600">[' + _taskType + ']&nbsp;</span>' + _Data[i].taskName + ' ' + _taskClassStr + '</a>'
+                                                }
+			                                    _taskDes = (_Data[i].taskDes).length >0 ? (_Data[i].taskDes).replace(/<br>/g, "") : "";
+			                                    var _taskDesStr = "";
+			                                    if(_taskDes){
+				                                    _taskDesStr = '<li class="ellipsis">' + _taskDes + '</li>';
+			                                    }
+			                                    _individuationStr = '<li class="ellipsis in-block">'+_singsoundAuthStr+'</li>'   +
+				                                    _taskDesStr +
+				                                    '<li>起/止：'+_Data[i].singsound.beginTime+'/'+_Data[i].singsound.endTime+'&nbsp;&nbsp;<span class="cj-color">'+_cj+'</span></li>';
+		                                    }
+	                                    }else{
+		                                    if(_Data[i].singsound){
+                                                //是否有先生权限 true 有，false 没有
+                                                if(_Data[i].singsound.singsoundAuth){
+                                                    _liStr = '<li class="ellipsis in-block"><a target="xs" href="'+lwschoolIp+'task?m=next&taskId='+_Data[i].taskId+'&token='+window.sessionStorage.getItem("token")+'"><span class="fw600">[' + _taskType + ']&nbsp;</span>' + _Data[i].taskName + ' ' + _taskClassStr + '</a></li>'
+                                                }else{
+                                                    _liStr = '<li class="ellipsis in-block"><a class="singsoundAuthFalse"><span class="fw600">[' + _taskType + ']&nbsp;</span>' + _Data[i].taskName + ' ' + _taskClassStr + '</a></li>'
+                                                }
+		                                    }
+	                                    }
+
+	                                    classStyle = 'xs'
+                                    }
+
+									//在当前页面打开，1学资源，2讨论，3做题，4测验，6微课程，789一般任务
+									var _selfArr = [1,2,3,4,6,7,8,9];
+									if(_liStr == ""){
+										if( _Data[i].taskType == 14 ){
+											_liStr = '<li class="ellipsis in-block"><a href="'+lwschoolIp+'task?m=next&fromPage=stulist&taskId='+_Data[i].taskId+'&token='+window.sessionStorage.getItem("token")+'"><span class="fw600">[' + _taskType + ']&nbsp;</span>' + _Data[i].taskName + ' ' + _taskClassStr + '</a></li>';
+										} else if(_Data[i].taskStatus == 2 && (_Data[i].taskType == 1 || _Data[i].taskType == 4)) {
+                                            var testUrl = lwschoolIp+'task?m=next&taskId='+_Data[i].taskId+'&token='+window.sessionStorage.getItem("token");
+                                            _liStr = '<li class="ellipsis in-block"><a href="javascript:void(0);" data-taskId="' + _Data[i].taskId + '" data-url="' + testUrl + '" class="test-done-link"><span class="fw600">[' + _taskType + ']&nbsp;</span>' + _Data[i].taskName + ' ' + _taskClassStr + '</a></li>';
+                                        } else {
+											if( _selfArr.indexOf(_Data[i].taskType) >= 0){
+												_liStr = '<li class="ellipsis in-block"><a href="'+lwschoolIp+'task?m=next&taskId='+_Data[i].taskId+'&token='+window.sessionStorage.getItem("token")+'"><span class="fw600">[' + _taskType + ']&nbsp;</span>' + _Data[i].taskName + ' ' + _taskClassStr + '</a></li>';
+											} else {
+												_liStr = '<li class="ellipsis in-block"><a target="' + (classStyle || "_blank") + '" href="'+lwschoolIp+'task?m=next&taskId='+_Data[i].taskId+'&token='+window.sessionStorage.getItem("token")+'"><span class="fw600">[' + _taskType + ']&nbsp;</span>' + _Data[i].taskName + ' ' + _taskClassStr + '</a></li>';
+											}
+										}
+									}
+
+									//不覆盖答题卡描述
+									if( _Data[i].taskType != 13 ){
+                                        _taskDes = (_Data[i].taskDes).length >0 ? (_Data[i].taskDes).replace(/<br>/g, "") : "" ;
+                                    }
+
+	                                if(_individuationStr == ""){
+	                                	if(_taskDes){
+			                                _individuationStr = _liStr   +
+				                                '<li class="ellipsis">' + _taskDes + '</li>' +
+				                                '<li> ' + _surplusTime + '</li>';
+		                                }else{
+			                                _individuationStr = _liStr   +
+				                                '<li> ' + _surplusTime + '</li>';
+		                                }
+	                                }
+                                    var hoverStr = "";
+                                    var stateStr = "";
+                                    var lastNumStr = "";
+                                    if( _taskDes ){
+                                        if(_Data[i].taskType == 13 && _Data[i].answersheet && _Data[i].answersheet.showPublishFlag){
+                                            hoverStr = '<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 every-list hover-list" style="height: 138px;">'
+                                            stateStr = '<span class="state '+_taskStatusStyle+'">' + _taskStatus + '</span>'
+                                        } else {
+                                            hoverStr = '<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 every-list hover-list">'
+                                            stateStr = '<span class="state '+_taskStatusStyle+'">' + _taskStatus + '</span>'
+                                        }
+                                    } else {
+                                        if(_Data[i].taskType == 13 && _Data[i].answersheet && _Data[i].answersheet.showPublishFlag){
+                                            hoverStr = '<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 every-list hover-list">'
+                                            stateStr = '<span class="state '+_taskStatusStyle+'">' + _taskStatus + '</span>'
+                                        } else {
+                                            hoverStr = '<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 every-list hover-list" style="height: 84px;">'
+                                            stateStr = '<span style="margin-top: 30px;" class="state '+_taskStatusStyle+'">' + _taskStatus + '</span>'
+                                            lastNumStr = 'margin-top:34px;'
+                                        }
+                                    }
+
+                                    var lastNumStr = '';
+                                    var showReportArr = [3,5,6];
+                                    if(_Data[i].taskType == 13 && _Data[i].answersheet && showReportArr.indexOf(_Data[i].answersheet.paperStatus) >= 0 ){
+                                        lastNumStr += '<div class="pull-right task-report" style="'+lastNumStr+'"><a href="../report/sindex.html?tid=' + _Data[i].taskId + '&fromPage=stulist&uid=">查看报告</a></div>';
+                                    }
+                                    if(_Data[i].taskType == 13 && _Data[i].answersheet){
+                                        if (_Data[i].answersheet.scoreRank == 1) {
+                                            lastNumStr += '       <img src="images/pm1.png" class="pmimg"/>';
+                                        } else if (_Data[i].answersheet.scoreRank == 2) {
+                                            lastNumStr += '       <img src="images/pm2.png" class="pmimg"/>';
+                                        } else if (_Data[i].answersheet.scoreRank == 3) {
+                                            lastNumStr += '       <img src="images/pm3.png" class="pmimg"/>';
+                                        }
+                                    }
+
+                                    _oAllListStrDone += hoverStr+
+                                        '<div class="col-lg-8 col-md-8 col-sm-8 col-xs-8 js-detail-link detail-link">' +
+                                        '<div class="list-logo-card '+classStyle+'"></div>' +
+                                        '<ul class="mf16" data-taskId=' + _Data[i].taskId + ' data-taskStatus=' + _Data[i].taskStatus + '>' +
+                                        _individuationStr +
+                                        '</ul>' +
+                                        '</div>' +
+                                        '<div class="col-lg-2 col-md-2 col-sm-2 col-xs-2 js-detail-link detail-link">'+stateStr+'</div>' +
+                                        '<div class="col-lg-2 col-md-2 col-sm-2 col-xs-2">' +
+                                        lastNumStr +
+                                        '</div>' +
+                                        '</div>';
+                                }
+                                $('.class-list-box').append(_oAllListStrDone);
+                                var _height = "";
+                                var _ilength = 0;
+                                var _ilength0 = 0;
+	                            if(res.data.total > 5){
+	                            	$(".class-list-box .hover-list").each(function (i,item) {
+			                            if($(this).attr("style")){
+				                            _ilength = _ilength + 1;
+			                            }else{
+				                            _ilength0 = _ilength0 + 1
+			                            }
+		                            });
+		                            _height = _ilength*84;
+		                            _height = _height + _ilength0*120;
+		                            //$(".content").css("min-height",(_height +98) + 'px')
+	                            }else{
+		                            //$(".content").css("min-height",('760px'))
+	                            }
+
+                                //任务列表
+                                var options = {
+                                    event: '#paging2',
+                                    //box: '.class-right-auto',
+                                    pageSize: res.data.pageSize || 10,
+                                    pageNum: res.data.pageNum || 1,
+                                    total: res.data.total,
+                                    itemLength: $('.class-right-auto .every-list').length
+                                };
+                                ScrollPager(options, function (option) {
+                                    //默认展开按课程任务列表
+                                    $.getStudentsTaskList({
+                                        subjectId: Defaults.subjectId,//学科ID  _subjectId
+                                        courseId: $('.menu .active').attr('id'),//课程ID
+	                                    term:$('.slider-box .active').attr("data-ref"), //学期ID
+                                        sortType: 3,//排序类型  1 创件时间正序，2 结束时间倒叙，3 老师列表的排序规则
+                                        endType: 3,//是否结束  1.已结束，2未结束，3全部
+                                        pageNum: option.pageNum,//分页大小
+                                        pageSize: 10,//当前页数
+                                        more: 2
+                                    });
+                                });
+
+	                            if(res.data.pageNum == 1 && res.data.total <= 10){
+	                                $("#paging3 .over").empty();
+                                    $('#paging3').hide();
+	                            }
+                            }
+
+                            //DoneTaskFun(Defaults.subjectId,Defaults);
+                            //无先生权限 弹出提示层
+                            $('.singsoundAuthFalse').off('click').on('click',function () {
+                                // LayuiFun("对不起，您没有权限，请联系管理员开通！")
+                            });
+
+
+                            //点击直播课按钮弹出浮层
+                            $('.zbk-click').off('click').on('click',function () {
+                                var _courseId = $(this).attr("data-courseid");
+                                var _taskname = $(this).attr("data-taskname");
+                                var index = layer.open({
+                                    type: 1,
+                                    title: '回放列表',
+                                    skin: 'ecampus-class',
+                                    closeBtn: 1,
+                                    btnAlign: 'c',
+                                    move: false,
+                                    shade: [0.5, '#000000'],
+                                    shadeClose: true,
+                                    area: ['650px', '520px'],
+                                    content: $('.oldplay'),
+                                    btn: ['确定'],
+                                    success:function (index) {
+                                        $('.layui-layer-close').addClass("shareclosebtn");
+                                        $('.layui-layer-title').addClass("layui-title");
+                                        $('.layui-layer-btn').addClass("layui-layer-btn0-style");
+                                        $.getLiveRecords({
+                                            srcId:"2",
+                                            courseId:_courseId,
+                                            pageSize:"10",
+                                            currentPage:"1",
+                                            taskname:_taskname
+                                        });
+
+                                    },
+                                    yes: function (index) {
+                                        layer.close(index)
+                                    },
+                                    btn2: function (index, layero) {
+                                        layer.close(index)
+                                    }
+                                });
+								//阻止整体点击事件触发
+								return false;
+                            });
+                            //true 结束 false 未结束 当直播结束时 调出提示框直播课已结束，你无法进入
+	                        $(".liveOver-btn").off("click").on("click",function () {
+		                        // LayuiFun("直播课已结束，你无法进入！")
+	                        });
+	                        //自测任务弹层提示
+	                        $(".zc-click").off("click").on("click",function () {
+		                        // LayuiFun("作业已结束，你无法进入测试！")
+	                        });
+							$(".js-detail-link").off("click").on("click",function(){
+								var link = $(this).closest('.every-list').find("a").eq(0);
+								if(link.hasClass('liveOver-btn')){
+                                    LayuiFun("直播课已结束，你无法进入！")
+                                } else if(link.hasClass('zc-click')){
+                                    LayuiFun("作业已结束，你无法进入测试！")
+                                }else if(link.hasClass('singsoundAuthFalse')){
+                                    LayuiFun("对不起，您没有权限，请联系管理员开通！")
+                                } else if( link.hasClass('test-done-link') ) {
+                                    var taskId = link.attr("data-taskId");
+                                    var _token = $.getToken();
+                                    var taskLink = link.attr("data-url");
+                                    $.ajax({
+                                        url: BASE_API_URL + '/task-submit-log-service/task-submit-logs',
+                                        type: 'GET',
+                                        data: {
+                                            taskId: taskId,
+                                            r: Math.random()
+                                        },
+                                        dataType: 'JSON',
+                                        beforeSend: function (request) {
+                                            request.setRequestHeader('Authorization', _token);
+                                        },
+                                        success: function (res) {
+                                            //data：  0 处理中  2=处理成功 -1 处理失败
+                                            if (res && res.code == 1 && res.data==0) {
+                                                    layui.use('layer', function () {
+                                                        var layer = layui.layer;
+                                                        var index = layer.open({
+                                                            type: 1,
+                                                            title: '  ',
+                                                            closeBtn: false,
+                                                            skin: 'ecampus-class',
+                                                            area: ['360px', '200px'],
+                                                            content: '<div style="text-align: center">作业已经提交，数据处理中，先去做别的作业吧！</div>',
+                                                            btn: ['我知道了'],
+                                                            btnAlign: 'c',
+                                                            success: function () {
+                                                            },
+                                                            yes: function(){
+                                                                layer.close(index);
+                                                            }
+                                                        }); 
+                                                    });
+                                            } else {
+                                                window.location.href=taskLink;
+                                            }
+                                        },
+                                        error: function (e) {
+                                            $.getErrorMsg(e, "");
+                                        }
+                                    });
+                                    
+                                } else{
+                                    link[0].click();
+                                }
+							});
+	                        function LayuiFun(text) {
+		                        layui.use(['layer'], function () {
+			                        var index = layer.open({
+				                        type: 1,
+				                        title: '提示',
+				                        skin: 'ecampus-class',
+				                        closeBtn: 1,
+				                        btnAlign: 'c',
+				                        move: false,
+				                        shade: [0.5, '#000000'],
+				                        shadeClose: true,
+				                        area: ['500px', '250px'],
+				                        content: '<div class="pl70 pr70 pre layuiFun">'+text+'</div>',
+				                        btn: ['我知道了'],
+				                        yes: function (index) {
+					                        layer.close(index)
+				                        },
+				                        btn2: function (index, layero) {
+					                        layer.close(index)
+				                        }
+			                        });
+		                        })
+	                        }
+                        } else {
+	                        //$(".content").css("min-height",('760px'))
+                            $('.hiveingdone').html(res.data.total||0);
+                            $('.isGreat').show();
+                            if(Defaults.more != ""){
+                                $('.having-tasklist').html("");
+                            }
+                            $('#paging2').empty();
+                            $('.done-list').empty();
+                            if(Defaults.courseId != ""){
+                                var _notaskstr = '<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 nothings-box2 is-done-classes" style="display: block;">';
+                                _notaskstr += '	<div class="nothings-div">';
+                                _notaskstr += '		<div class="b-nothing" style="left: 0px;">暂无作业</div>';
+                                _notaskstr += '	</div>';
+                                _notaskstr += '</div>';
+                                $('.class-list-box').html(_notaskstr)
+                            }
+                            if(Defaults.endType == 2){
+                                $('.b-nothing').html('太棒了，你没有未完成的作业').removeClass("left0")
+                            }
+
+
+                            if(Defaults.isClick == 1 && Defaults.endType == 1 &&$('.having-tasklist .every-list').length ==0){
+                                $('.aaa').show();
+                                $('.b-nothing').addClass("left0").html('本学期暂无作业');
+                            }
+                        }
+                    }
+                },
+                error: function (e) {
+					$.getErrorMsg(e, "获取任务列表");
+                }
+            });
+        },
+        //学生端 课程列表 和 未完成任务小红点接口  323
+        getStuCoursesList: function (options) {
+            var Defaults = {
+                subjectId: "",//学科ID
+                pageNum: "",//分页大小
+                pageSize: "",//当前页数
+	            termRef:""//学期ID
+            };
+            Defaults = $.extend(Defaults, options);
+            $.ajax({
+                url: BASE_API_URL + '/api-service-course/courses/stu-courses',
+                type: 'GET',
+                data: {
+                    type: 1,
+                    subjectId: Defaults.subjectId,
+                    pageSize: Defaults.pageSize,
+                    pageNum: Defaults.pageNum,
+	                termRef: $('.subjects-list .active').attr("data-ref"),
+                    r: Math.random()
+                },
+                dataType: 'JSON',
+                beforeSend: function (request) {
+                    request.setRequestHeader('Authorization', _token);
+                },
+                success: function (res) {
+                    if (res.code == 1) {
+                        if (res.data && res.data.list.length > 0) {
+                            $('.menu').show();
+                            //如果有数据 则展示课程查询
+                            $('.time-line').show();
+	                        $('.loading2').hide();
+                            $('.nothings-box3').hide();
+	                        $('.content').css({"width":"calc(100% - 210px)"});
+                            // 数据处理
+                            var Thtml = [];
+                            var data = res.data.list;
+                            if (data && data.length > 0) {
+                                $('.text-time-end').html(res.data.endTime);
+                                data.forEach(function (group, gindex) {
+                                    Thtml.push('<div class="time-port group">');
+                                    Thtml.push('<div class="text">' + group.startTimeGroup + '</div>');
+                                    Thtml.push('<div class="port">');
+                                    Thtml.push('<img src="images/time-port.png"/>');
+                                    Thtml.push('</div>');
+                                    Thtml.push('</div>');
+                                    group.courseList.forEach(function (classes, cindex) {
+                                        if (gindex === 0 && cindex === 0  &&Defaults.pageNum  == 1) {
+                                            Thtml.push('<div class="time-port js-course-item" id="' + classes.courseId + '">');
+                                        } else {
+                                            Thtml.push('<div class="time-port js-course-item" id="' + classes.courseId + '">');
+                                        }
+                                        var undoneStr = "";
+                                        if(classes.noFinTaskNum &&　classes.noFinTaskNum　> 0){
+                                            undoneStr = '<span class="red-num"></span>';
+                                        }
+                                        var repairStr = "";
+                                        if(classes.correctionTaskNum &&　classes.correctionTaskNum　> 0){
+                                            repairStr = '<span class="repair-icon">改错</span>';
+                                        }
+                                        if (classes.courseName.length > 25) {
+                                            Thtml.push('<div class="text" title="' + classes.courseName + '">' + classes.courseName.substring(0, 25) + '...' + repairStr + undoneStr + '</div>');
+                                        } else {
+                                            Thtml.push('<div class="text" title="' + classes.courseName + '">' + classes.courseName + repairStr + undoneStr +'</div>');
+                                        }
+                                        Thtml.push('<div class="port"></div>');
+                                        Thtml.push('</div>');
+                                    })
+                                });
+
+								$('.time-line-list').append(Thtml.join('')).show();
+                                if (sessionStorage.getItem('courseId')) {
+                                    var currCourse = $('.time-line-list .js-course-item[id="' + sessionStorage.getItem('courseId') + '"]');
+									currCourse.addClass('active');
+									$(".title-classes").html(currCourse.find(".text").attr("title"));
+								} else {
+									var currCourse = $('.time-line-list .js-course-item').eq(0);
+									currCourse.addClass('active');
+									$(".title-classes").html(currCourse.find(".text").attr("title"));
+                                }
+
+								setMenuHeight();
+								//滚动到头部，重新定位左侧
+								//var scrollTop = $(window).scrollTop()||0;
+								//ScrollCommTime(scrollTop);
+
+								$('#paging').remove();
+								if (res.data.total > $('.js-course-item').length) {
+									$('.time-line-list').append('<div id="paging"></div>');
+								}
+
+								//时间轴分页参数
+								var options = {
+									event: '#paging',
+									box: '.time-line-list',
+									pageSize: res.data.pageSize || 20,
+									pageNum: res.data.pageNum || 1,
+									total: res.data.total,
+									itemLength: $('.js-course-item').length
+								};
+								ScrollPager1(options, function (option) {
+									$.getStuCoursesList({
+										subjectId: Defaults.subjectId,//班级ID _subjectId
+										pageNum: option.pageNum,//分页大小
+										pageSize: 20,//当前页数
+									});
+								});
+
+                                if (Defaults.pageNum == 1) {
+									//默认展开按课程任务列表
+									$.getStudentsTaskList({
+										subjectId: Defaults.subjectId,//学科ID  _subjectId
+										term:$('.slider-box .active').attr("data-ref"), //学期ID
+										courseId: $('.time-line-list .active').attr("id"),//课程ID
+										sortType: 3,//排序类型  1 创件时间正序，2 结束时间倒叙，3 老师列表的排序规则
+										endType: 3,//是否结束  1.已结束，2未结束，3全部
+										pageNum: 1,//分页大小
+										pageSize: 10,//当前页数
+										more: 2
+									});
+								}
+
+                                $('.time-port').off('click').not(".group").on('click',function () {
+									$(".class-list-box").empty();
+                                    var _courseId = $(this).attr("id");
+                                    sessionStorage.setItem('courseId',_courseId)
+                                    $(this).addClass("active").siblings().removeClass("active");
+                                    $('.class-list-box').empty();
+                                    $('#paging2 .over').empty();
+                                    $('#paging2 .load').empty();
+                                    $(".title-classes").html($(this).find(".text").attr("title"));
+									windowScroll();
+                                    $.getStudentsTaskList({
+                                        subjectId: Defaults.subjectId,//班级ID  _subjectId
+                                        courseId: _courseId,//课程ID
+	                                    term:$('.slider-box .active').attr("data-ref"), //学期ID
+                                        sortType: 3,//排序类型  1 创件时间正序，2 结束时间倒叙，3 老师列表的排序规则
+                                        endType: 3,//是否结束  1.已结束，2未结束，3全部
+                                        pageNum: 1,//分页大小
+                                        pageSize: 10,//当前页数
+                                        more: 2
+                                    });
+                                });
+
+                            } else {
+                                Thtml.push('<div class="nodata">');
+                                Thtml.push('<img src="../images/nodatabig.png"/>');
+                                Thtml.push('</div>');
+                                $('.menu').hide();
+                                $('.time-line').append(Thtml.join('')).css('width', '100%');
+                            }
+                        } else {
+                            //为空 显示占位图
+                            $('.menu').hide();
+                            $('.content').css({"width":"100%"});
+	                        $('.loading2').hide();
+	                        $('.title-classes').html("");
+							var _str = '';
+							_str += '<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 nothings-box2 isGreat  aaa" style="display: block;">';
+							_str += '	<div class="nothings-div">';
+							_str += '		<div class="b-nothing" style="left: 0px;">暂无作业</div>';
+							_str += '	</div>';
+							_str += '</div>';
+	                        $('#paging2 ').html(_str);
+	                        $('.class-index2').show();
+                        }
+                    }
+                },
+                error: function (e) {
+					$.getErrorMsg(e, "获取作业");
+                }
+            });
+        },
+        //记录回放  331
+        getLiveRecords: function (options) {
+            var Defaults = {
+                srcId: "",//直播课来源  1=网校，2=数校
+                courseId: "",//直播课id
+                liveId: "",//直播id
+                liveStartTime: "",//直播开始时间
+                liveStopTime: "",//直播结束时间
+                taskname:""//任务名称
+            };
+            Defaults = $.extend(Defaults, options);
+            var LIVE_PARTNERS = encodeURI('cc直播');
+            $.ajax({
+                url: BASE_API_URL + '/api-live-service/api/live/'+LIVE_PARTNERS+'/getLiveRecords',
+                type: 'GET',
+                data: {
+                    srcId: parseInt(Defaults.srcId),
+                    courseId: parseInt(Defaults.courseId),
+                    r: Math.random()
+                },
+                dataType: 'JSON',
+                beforeSend: function (request) {
+	                request.setRequestHeader('Authorization', _token);
+                },
+                success: function (res) {
+                    if (res.code == 1) {
+                        if(res.data && res.data.recordList.length >0){
+                        	if(($('.oldplay .hei380').find("ul").length == 0)){
+		                        $('.oldplay .hei380').html("<ul></ul>");
+	                        }
+                            var _recordListStr = "";
+                            for(var i=0;i<res.data.recordList.length;i++){
+                                if((res.data.recordList)[i].recordStatus == 0){
+                                    _recordListStr += '<li><span class="fl">'+Defaults.taskname+''+parseInt(i+1)+'</span><span class="fr wc">录制未完成</span></li>'
+                                }else{
+                                    _recordListStr += '<li><span class="fl"><a target="_blank" href="'+(res.data.recordList)[i].replayUrl +'">'+Defaults.taskname+''+parseInt(i+1)+'</a></span><span class="fr wc">录制完成</span></li>'
+                                }
+                            }
+                            $('.oldplay ul').html(_recordListStr);
+                        }
+                    }else{
+						$('.oldplay .hei380').html("<div class='oldplaynothing'></div><div class='oldplay-center'>暂无回放</div>")
+                    }
+                },
+                error: function (e) {
+					$.getErrorMsg(e, "记录回放");
+                }
+            });
+        },
+
+        //弹窗消息
+        LayuiMessage: function (options) {
+            var Defaults = {
+                message: ''
+            };
+             Defaults = $.extend(Defaults, options);
+            layui.use(['layer'], function () {
+                var layer = layui.layer;
+                layer.msg(Defaults.message, {time: 3000});
+            })
+        }
+    });
+    //点击查看已完成任务
+    function DoneTaskFun(subjectId) {
+        $('.btn-click').off('click').on('click', function () {
+            if ($(this).attr('data-idx') == 'true') {
+            	$('.c-img').addClass("ro180")
+	            $('#paging4 .over').html("");
+                //点击查看已完成任务
+                $.getStudentsTaskList({
+                    subjectId: parseInt(subjectId),//学科ID  _subjectId
+                    sortType: 2,//排序类型  1 创件时间正序，2 结束时间倒叙，3 老师列表的排序规则
+                    endType: 1,//是否结束  1.已结束，2未结束，3全部
+                    pageNum: 1,//分页大小
+                    pageSize: 10,//当前页数
+                    moreDone: 1,
+	                term:$('.slider-box .active').attr("data-ref"), //学期ID
+                    //more:2,//查看更多
+                    belong: true,
+                    isClick:1
+                });
+            } else {
+	            $('.c-img').addClass("ro180")
+	            $(window).off("scroll");
+            	$('#paging4 .over').html("");
+                if($('.having-tasklist').children().length ==0 ){
+                    $('.isGreat').show();
+                }
+                _idx = 0;
+                // $('#paging3 .over').html('<div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 pb40"><div class="btn-click" data-idx="true"><span>查看已完成作业</span><img class="c-img" src="images/keyboard-arrow-down.png" /></div></div>');
+                // $('#paging3').show();
+                // DoneTaskFun(subjectId);
+	            // $('.done-list').empty();
+            }
+        });
+    }
+    //右侧滚动加载
+    var ScrollPager = function (option, callback) {
+        if (!option.pageSize) {
+            option.pageSize = 10;
+        }
+        if (!option.pageNum) {
+            option.pageNum = 1;
+        }
+        var $event = $(option.event);
+        var $box = $(window);
+		if (option.itemLength < option.total) {
+			if (option.belong) {
+	            $event.html('<div class="over"><div class="load">滚动或点击加载更多</div></div>');
+            }else{
+	            $event.html('<div class="load">滚动或点击加载更多</div>');
+            }
+			$box.off('scroll').on('scroll', function () {
+                var scrollTop = Math.ceil($(this).scrollTop());
+				var scrollHeight = $(document).height() || 0;
+				var clientHeight =  $(this).height() || 0;
+				var footerHeight = ( $(".footer").length > 0 ) ? $(".footer").outerHeight() : 0;
+                if (scrollTop + clientHeight >= scrollHeight - footerHeight - 60) {
+                    option.pageNum++;
+                    $box.off('scroll');
+                    callback(option);
+                }
+				ScrollCommTime(scrollTop);
+            });
+            $event.find('.load').off('click').on('click', function () {
+                option.pageNum++;
+                $event.find('.load').off('click');
+                callback(option);
+            });
+        } else {
+            $box.off('scroll');
+            if (option.belong) {
+                /*查看已完成任务---没修改lu*/
+	            if($("#paging4").children().length == 0 && $("#paging3").children().text() != "隐藏已完成作业" && $("#paging3").children().text() != ""){
+		            //$event.html('<div class="over"><div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 pb40"><div class="btn-click" data-idx="true"><span>查看已完成作业</span><img class="c-img" src="images/keyboard-arrow-down.png" /></div></div></div>');
+	            }else if($("#paging3").children().text() == ""){
+	            	if(option.sortType == 2){
+			            $event.html('<div class="over"></div>');
+		            }else{
+			            if($("#paging4 .over .load").text().length == 0){
+				            //$("#paging3").html('<div class="over"><div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 pb40"><div class="btn-click" data-idx="true"><span>查看已完成作业</span><img class="c-img" src="images/keyboard-arrow-down.png" /></div></div></div>');
+				            //$('#paging3').show();
+			            }else{
+				            /*$event.html('<div class="over">全部加载完成</div>');*/
+							$event.html('');
+							windowScroll();
+			            }
+		            }
+
+	            }else if($(".done-list").children().length ==0){
+		            //$event.html('<div class="over"><div class="col-lg-12 col-md-12 col-sm-12 col-xs-12 pb40"><div class="btn-click" data-idx="true"><span>查看已完成作业</span><img class="c-img" src="images/keyboard-arrow-down.png" /></div></div></div>');
+	            }else{
+		            if(option.total>10){
+			            /*$event.html('<div class="over">全部加载完成</div>');*/
+						$event.html('');
+			            //$box.off('scroll');
+						// windowScroll();
+		            }else{
+						windowScroll();
+		            }
+	            }
+            } else {
+				if (option.pageSize < option.total) {
+					$event.html('<div class="over">全部加载完成</div>');
+				}
+				$(window).off().on('scroll', function () {
+					var scrollTop = Math.ceil($(this).scrollTop());
+					ScrollCommTime(scrollTop);
+				})
+            }
+        }
+
+    };
+	//左侧时间轴方法
+	var ScrollPager1 = function (option, callback) {
+		if (!option.pageSize) {
+			option.pageSize = 20;
+		}
+		if (!option.pageNum) {
+			option.pageNum = 1;
+		}
+		var $event = $(option.event);
+		var $box = $(option.box || $('.time-line-list'));
+		if (option.itemLength < option.total) {
+			$event.html('<div class="load">滚动或点击加载更多</div>');
+			$box.off('scroll').on('scroll', function () {
+				var scrollTop = Math.ceil($(this).scrollTop());
+				var scrollHeight = $box[0].scrollHeight || 0;
+				var clientHeight = $box[0].clientHeight || 0;
+				if (scrollTop + clientHeight >= scrollHeight) {
+					option.pageNum++;
+					$box.off('scroll');
+					callback(option);
+				}
+			});
+			$event.find('.load').off('click').on('click', function () {
+				option.pageNum++;
+				$event.find('.load').off('click');
+				$box.off('scroll');
+				callback(option);
+			});
+		}
+	};
+    //轮播选项
+    var Slider = function (option) {
+        var $event = $(option.event);
+        var $item = $event.find('.item');
+        var $prev = $event.find('.prev');
+        var $next = $event.find('.next');
+        var clinetwidth = $event.width() - 100;
+        //如果容器超出外壳的宽度，启动扩展模式
+        if ($event.width() < $item.width() * $item.length) {
+            $event.addClass('slider');
+        } else {
+            $event.removeClass('slider');
+        }
+        $event.find('.item-box').css('width', $item.width() * $item.length);
+        $prev.addClass('disabled');
+		setMenuHeight();
+
+        //选中事件
+        $item.off('click').on('click', function () {
+            var $this = $(this);
+            $prev.removeClass('disabled');
+            $next.removeClass('disabled');
+
+            if ($this.index() === 0) {
+                $prev.addClass('disabled');
+            }
+            if ($this.index() === $item.length - 1) {
+                $next.addClass('disabled');
+            }
+			$item.removeClass('active');
+			$this.addClass('active');
+
+			if (option.onClick) {
+				option.onClick($this, option);
+			}
+        });
+
+        //前翻
+        $prev.off('click').on('click', function () {
+            if ($(this).hasClass('disabled')) {
+                return false;
+            }
+            var $active = $(option.event).find('.active');
+            var index = $active.index();
+            $next.removeClass('disabled');
+            if (index > 0) {
+                var srcollleft = $active.width() * (index - 1);
+                $item.removeClass('active');
+                $item.eq(index - 1).addClass('active');
+                if (clinetwidth - 18 < srcollleft) {
+                    $event.find('.slider-box').css('left', clinetwidth - 18 - srcollleft);
+                } else {
+                    $event.find('.slider-box').css('left', '0');
+                }
+            }
+            if (index - 1 === 0) {
+                $prev.addClass('disabled');
+            }
+            if (option.prevClick) {
+                option.prevClick(option);
+            }
+        });
+
+        //后翻
+        $next.off('click').on('click', function () {
+            if ($(this).hasClass('disabled')) {
+                return false;
+            }
+            var $active = $(option.event).find('.active');
+            var index = $active.index();
+            $prev.removeClass('disabled');
+            if (($item.length - 1) > index) {
+                var srcollleft = $active.width() * (index + 1);
+                $item.removeClass('active');
+                $item.eq(index + 1).addClass('active');
+                if (srcollleft >= clinetwidth) {
+                    $event.find('.slider-box').css('left', clinetwidth - 18 - srcollleft);
+                }
+            }
+            if ($item.length - 1 === index + 1) {
+                $next.addClass('disabled');
+            }
+            if (option.nextClick) {
+                option.nextClick(option);
+            }
+        });
+
+        //窗体改变后的自调
+        $(window).off('resize').on('resize', function () {
+            Slider(option);
+        })
+    };
+    //点击 按作业或者 按课程
+    $('.switch li').off('click').on('click', function () {
+	    window.sessionStorage.removeItem("total");
+        if ($(this).attr('data-index') == '1') {
+	        $('.having-tasklist').empty();
+	        $('.done-list').empty();
+	        $('.class-list-box').empty();
+	        $('.time-line-list').empty();
+	        // $('#paging3 .over').empty();
+            // $('#paging3').hide();
+	        $('#paging2 .over').empty();
+	        $('#paging2 .load').empty();
+	        $('#paging4 .over').empty();
+            $(this).parents('.classes-box').hide().siblings('.task-box').show();
+            $(".having-tasklist").empty();
+	        $.getPageTypeLogSave({
+		        pageType:1
+	        });
+	        //默认加载任务列表 未完成
+	        $.getStudentsTaskList({
+		        subjectId: $('.slider-box .active').attr("data-subjectid"),//学科ID  _subjectId
+		        // courseId:1,//课程ID  非必填参数
+		        sortType: 1,//排序类型  1 创件时间正序，2 结束时间倒叙，3 老师列表的排序规则
+		        endType: 2,//是否结束  1.已结束，2未结束，3全部
+		        pageNum: 1,//分页大小
+		        first:1,
+		        pageSize: 10,//当前页数
+		        term:$('.slider-box .active').attr("data-ref") //学期ID
+	        });
+        } else {
+	        //默认加载学生端 课程列表 和 未完成任务小红点接口
+            $('.class-list-box').empty();
+            $('.time-line-list').empty();
+            $('.title-classes').empty();
+	        $.getPageTypeLogSave({
+		        pageType:2
+	        });
+	        $.getStuCoursesList({
+		        subjectId: parseInt($('.slider-box .active').attr("data-subjectid")),//学科ID _subjectId
+		        pageNum: 1,//分页大小
+		        pageSize: 20,//当前页数
+	        });
+            $(this).parents('.task-box').hide().siblings('.classes-box').show();
+        }
+    });
+}));
+
+var setMenuHeight = function(){
+	var menuHeight = $(window).height() - 20;
+	var menuRealHeight = 0;
+	var lastDom = $(".time-port:last-child");
+	if( lastDom.length > 0 && lastDom.position().top ){
+		menuRealHeight = lastDom.position().top + lastDom[0].clientHeight;
+	}
+	//如果右边没内容，按照右边算，使左右对齐
+	if( menuRealHeight && menuHeight > menuRealHeight ){
+		menuHeight = menuRealHeight;
+	}
+	$(".time-line-list").css("height", menuHeight + 'px');
+	//重新定位
+	if( $(".time-line-list").css("position") == "absolute" ){
+		$(".time-line-list").css("top", 0);
+	}
+};
+
+var ScrollCommTime = function(scrollTop){
+	var menuHeight = $(".time-line-list").css("height");
+	var minScroll = $(".content-box").offset().top;
+	if ( scrollTop < minScroll - 25 ) {
+		if( $(".time-line-list").css("position") == "fixed" || $(".time-line-list").css("position") == "absolute" ){
+			$(".time-line-list").attr("style","height: " + menuHeight);
+		}
+	} else {
+		var footerHeight = ( $(".footer").length > 0 ) ? $(".footer").outerHeight() : 0;
+		var maxTop = $(document).height() - footerHeight - $(window).height() - 60;
+		var minContent = $(".content").css("min-height").replace("px","");
+		if( $(".content").height() > minContent ){
+			if( scrollTop > maxTop ){
+				maxTop = maxTop - minScroll;
+				if( $(".time-line-list").css("position") != "absolute" ){
+					$(".time-line-list").attr("style","position: absolute; top: " + maxTop + "px; height: " + menuHeight);
+				}
+			} else {
+				if( $(".time-line-list").css("position") != "fixed" ){
+					$(".time-line-list").attr("style","position: fixed; top: 10px; height: " + menuHeight);
+				}
+			}
+		}
+	}
+};
+
+var windowScroll = function(){
+	//滚动到头部，重新定位左侧
+	var scrollTop = 0;
+	if( $(".fixed-nav").length > 0 && $(".fixed-nav").height() > 0 ){
+		scrollTop = $(".wrapper-content").offset().top + 30;
+	}
+	document.body.scrollTop = document.documentElement.scrollTop = scrollTop;
+	ScrollCommTime(scrollTop)
+};
