@@ -1,7 +1,7 @@
 # 河北秦皇岛一中在线课程自动签到
 一个简单的Python+Selenium程序，用来实现在秦皇岛一中的网课平台school.etiantian.com自动签到  
   
-十分感谢 [@DCZYewen](https://github.com/DCZYewen) 提供的另一种实现方式  
+十分感谢 [@DCZYewen](https://github.com/DCZYewen) 提供的另一种实现方式，保存在了js目录下  
 可惜作者高三没有时间了，故咕咕咕  
   
 ## 使用说明
