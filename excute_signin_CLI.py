@@ -11,11 +11,11 @@ y1 = sys.argv[2]
 x2 = sys.argv[3]
 y2 = sys.argv[4]
 
-opt = webdriver.ChromeOptions()
+opts = webdriver.ChromeOptions()
 opts.headless = True
 opts.add_argument("--window-size=1920,1080")
 
-driver = webdriver.Chrome(options=opt)
+driver = webdriver.Chrome(options=opts)
 driver.get('https://school.etiantian.com/hbqhd1z/elogin/#/')
 driver.delete_all_cookies()
 # 重置cookies
