@@ -65,8 +65,11 @@ chromedriver下载以及和Chrome版本对应参考：https://www.cnblogs.com/si
 #### 5.配置定时自动操作  
 使用Windows计划任务即可  
 见百度经验：https://jingyan.baidu.com/article/0964eca2cb8c17c284f53670.html  
+注意，请测试下计划任务是否正常执行，若窗口一闪而过，请按照  
+https://blog.csdn.net/qq_16066381/article/details/81164707 进行操作  
+  
 e.g.  
-按照说明创建biology.bat后在计划任务中添加每天16:00执行，即可实现每日16：00自动签到。  
+按照说明创建biology.bat后在计划任务中添加每天16:00执行，即可实现每日16:00自动签到。  
   
 **注意**  
 bat文件要以英文数字命名，否则计划任务很可能无法执行  
