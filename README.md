@@ -4,7 +4,7 @@
 十分感谢 [@DCZYewen](https://github.com/DCZYewen) 提供的另一种实现方式，保存在了js目录下  
 可惜作者高三没有时间了，故咕咕咕  
 Updated 4/13  
-1.若加载网页过慢，请适当延长time.sleep的时间  
+1.若加载网页过慢而出现未加载即执行点击事件的情况，请适当延长time.sleep的时间  
 2.修复了CLI版本的bug  
   
 ## 使用说明
