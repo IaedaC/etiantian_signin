@@ -31,8 +31,6 @@ with open('cookies.txt','r') as cookief:
         # 加载cookies
     driver.refresh()
     print("刷新页面使 cookies 生效")
-    driver.maximize_window()
-    print("最大化页面")
     driver.find_element(By.CSS_SELECTOR, ".accountLoginBtn").click()
     driver.close
     print("点击登录按钮 & 关闭页面")
