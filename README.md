@@ -17,9 +17,8 @@
   
 **2.配置 Google Chrome & chromedriver**  
 下载并安装Chrome：https://www.google.cn/chrome/  
-chromedriver下载以及和Chrome版本对应参考：https://www.cnblogs.com/siconglove/p/10522748.html  
-配置chromedriver环境变量参考：https://blog.csdn.net/weixin_43901998/article/details/88087832  
-（一定要配置chromedriver的环境变量）
+chromedriver下载以及环境变量参考：https://blog.csdn.net/weixin_43901998/article/details/88087832  
+（一定要配置chromedriver的环境变量，chromedriver与chrome版本严格对应，地址栏键入 chrome://version/ 查看chrome版本）  
 
 **3.安装 Python 的 Selenium 库**  
 若速度较慢，可使用科大源镜像，请在命令行输入  
