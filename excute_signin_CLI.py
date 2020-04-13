@@ -12,7 +12,8 @@ x2 = sys.argv[3]
 y2 = sys.argv[4]
 
 opt = webdriver.ChromeOptions()
-opt.set_headless()
+opts.headless = True
+opts.add_argument("--window-size=1920,1080")
 
 driver = webdriver.Chrome(options=opt)
 driver.get('https://school.etiantian.com/hbqhd1z/elogin/#/')
