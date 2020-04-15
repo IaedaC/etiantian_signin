@@ -44,7 +44,7 @@ $url="http://fenxi.haofenshu.com/report/pri/v1/exam/list";
 
      $header = array(
         'Content-Type:application/json',
-        'Cookie:你的cookie',
+        'Cookie:fxtoken=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJpZCI6MzExMzM0MjEwNjQxOTIwMCwiZnJvbSI6InlqfHx5eXp4IiwiaWF0IjoxNTg2ODQ3MzQyfQ.UcdeiYuRJM_nZasDsTfAVC9abhiENzeFbG8U2a4DbS7QwU3FcDrvwNmBBGq6Qfgi2_ZqLm-qFD_l7yjOWWsSdA',
       
       'User-Agent: Mozilla/4.0 (compatible; MSIE .0; Windows NT 6.1; Trident/4.0; SLCC2;)'); 
     $data = '{"offset":1,"limit":9999}';
