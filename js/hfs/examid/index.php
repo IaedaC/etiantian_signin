@@ -1,14 +1,24 @@
+
 <!DOCTYPE html>
 
 <html lang="en" class=""><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>examID</title>
+    <link rel="stylesheet" href="../css/bootstrap-float-label.css">
+<link rel="stylesheet" href="../css/font-awesome.4.7.0.css">
+<link rel="stylesheet" href="../css/bootstrap.min.css">
+<link rel="stylesheet" href="../css/slicknav.css">
+<link rel="stylesheet" href="../css/main.css">
+<link type="text/css" rel="stylesheet" charset="UTF-8" href="../css/translateelement.css">
 	</head>
 <body style="">
 <div class="preloader" style="display: none;">
   <span class="preloader-spin"></span>
 </div>
-<div class="site"><div class="service-area bg2 sp">
+<div class="site">
+   
+  
+  <div class="service-area bg2 sp">
 <div class="container">
 <div class="section-title">
 <h2>examID</h2>
@@ -44,7 +54,7 @@ $url="http://fenxi.haofenshu.com/report/pri/v1/exam/list";
 
      $header = array(
         'Content-Type:application/json',
-        'Cookie:fxtoken=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJpZCI6MzExMzM0MjEwNjQxOTIwMCwiZnJvbSI6InlqfHx5eXp4IiwiaWF0IjoxNTg2ODQ3MzQyfQ.UcdeiYuRJM_nZasDsTfAVC9abhiENzeFbG8U2a4DbS7QwU3FcDrvwNmBBGq6Qfgi2_ZqLm-qFD_l7yjOWWsSdA',
+        'Cookie:'.$cookie.'fxtoken=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJpZCI6MzExMzM0MjEwNjQxOTIwMCwiZnJvbSI6InlqfHx5eXp4IiwiaWF0IjoxNTg2ODQ3MzQyfQ.UcdeiYuRJM_nZasDsTfAVC9abhiENzeFbG8U2a4DbS7QwU3FcDrvwNmBBGq6Qfgi2_ZqLm-qFD_l7yjOWWsSdA',
       
       'User-Agent: Mozilla/4.0 (compatible; MSIE .0; Windows NT 6.1; Trident/4.0; SLCC2;)'); 
     $data = '{"offset":1,"limit":9999}';
@@ -54,6 +64,7 @@ $url="http://fenxi.haofenshu.com/report/pri/v1/exam/list";
 
 $obj = json_decode($ret);
 $result = $obj->data->examList;
+
 ?>
   <div class="col-md-12">
                         <br>
@@ -110,17 +121,7 @@ $result = $obj->data->examList;
 
 
 
-</div><footer>
-  <div class="footer-bottom">
-  <div class="container">
-<div class="row">
-<div class="col-lg-6">
-
 </div>
-</div>
-</div>
-</div>
-</footer>
 </div>
 
 
