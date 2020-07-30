@@ -10,8 +10,8 @@ Updated 4/13
 ## 使用说明
 ### 组成  
 **get_cookies.py** —— 获取网站自动登录cookies  
-**excute_signin.py** —— 带有图形界面的程序  
-**excute_signin_CLI.py** —— 以命令行方式运行的程序  
+**execute_signin.py** —— 带有图形界面的程序  
+**execute_signin_CLI.py** —— 以命令行方式运行的程序  
 **cookies.txt** —— 用来储存cookies信息   
   
 ### 准备工作
@@ -52,19 +52,19 @@ chromedriver下载以及环境变量参考：https://blog.csdn.net/weixin_439019
 若操作无误，同目录下cookies.txt应生成一段json信息。
   
 #### 4.编写启动脚本  
-编写bat脚本`"python ./excute_signin.py x1 y1 x2 y2"`  
+编写bat脚本`"python ./execute_signin.py x1 y1 x2 y2"`  
 传入的四个参数是什么呢，还记得之前记录的坐标么？这便是我们需要的四个参数。  
 设定之后尝试双击运行bat文件，如果进入了目标学科的页面，随后自动点击最新的直播间，打开直播间后自动关闭窗口，即配置成功。  
   
 **举例：**  
 记录了“生物 (870, 175) (-250, 140)”，新建biology.bat，内容为  
-`"python ./excute_signin.py 870 175 -250 140"`  
+`"python ./execute_signin.py 870 175 -250 140"`  
 以此类推  
   
 **注意**  
-这里执行的是excute_signin.py，因此模拟操作时会出现浏览器的图形界面，如果想让操作在后台运行，可以使用命令行版本，即将"excute_signin.py"替换为"excute_signin_CLI.py"，其他操作不变。  
+这里执行的是excute_signin.py，因此模拟操作时会出现浏览器的图形界面，如果想让操作在后台运行，可以使用命令行版本，即将"execute_signin.py"替换为"execute_signin_CLI.py"，其他操作不变。 
 若CLI(Command Line，无界面命令行)版本出现异常，请访问 https://bestfirms.com/what-is-my-screen-resolution/ 查看自己浏览器的分辨率  
-并用其替换掉excute_signin_CLI.py中16行的“--window-size=**1920,1080**”  
+并用其替换掉execute_signin_CLI.py中16行的“--window-size=**1920,1080**”  
   
 #### 5.配置定时自动操作  
 使用Windows计划任务即可  
