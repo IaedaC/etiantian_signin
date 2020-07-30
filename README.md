@@ -62,7 +62,7 @@ chromedriver下载以及环境变量参考：https://blog.csdn.net/weixin_439019
 以此类推  
   
 **注意**  
-这里执行的是excute_signin.py，因此模拟操作时会出现浏览器的图形界面，如果想让操作在后台运行，可以使用命令行版本，即将"execute_signin.py"替换为"execute_signin_CLI.py"，其他操作不变。 
+这里执行的是execute_signin.py，因此模拟操作时会出现浏览器的图形界面，如果想让操作在后台运行，可以使用命令行版本，即将"execute_signin.py"替换为"execute_signin_CLI.py"，其他操作不变。 
 若CLI(Command Line，无界面命令行)版本出现异常，请访问 https://bestfirms.com/what-is-my-screen-resolution/ 查看自己浏览器的分辨率  
 并用其替换掉execute_signin_CLI.py中16行的“--window-size=**1920,1080**”  
   
